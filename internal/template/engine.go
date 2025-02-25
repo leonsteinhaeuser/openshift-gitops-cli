@@ -7,7 +7,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/menu"
+	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/menu"
 )
 
 type Template struct {

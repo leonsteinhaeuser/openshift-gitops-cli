@@ -6,8 +6,8 @@ import (
 	"io"
 	"path"
 
-	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/cli"
-	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/project"
+	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/cli"
+	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/project"
 )
 
 // CreateEnvironment creates a context menu to create a new environment

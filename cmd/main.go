@@ -7,10 +7,10 @@ import (
 	"os"
 	"slices"
 
-	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/menu"
-	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/project"
-	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/template"
-	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/utils"
+	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/menu"
+	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/project"
+	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/template"
+	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/utils"
 	"github.com/manifoldco/promptui"
 )
 

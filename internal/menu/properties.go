@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/cli"
+	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/cli"
 )
 
 func askForProperties(writer io.Writer, reader *bufio.Reader) (map[string]string, error) {
