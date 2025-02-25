@@ -29,7 +29,7 @@ func CreateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.
 		if s == "" {
 			return fmt.Errorf("stage name cannot be empty")
 		}
-		if _, ok := config.Environments[s]; ok {
+		if _, ok := config.Environments[envResult].Stages[s]; ok {
 			return fmt.Errorf("stage already exists")
 		}
 		return nil
