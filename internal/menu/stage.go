@@ -38,6 +38,20 @@ func CreateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.
 		return nil, err
 	}
 
+	// let's ask if the user want to add additional properties
+	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
+	if err != nil {
+		return nil, err
+	}
+	properties := map[string]string{}
+	if createProperties {
+		pts, err := askForProperties(config.Environments[envResult].Properties, writer, reader)
+		if err != nil {
+			return nil, err
+		}
+		properties = pts
+	}
+
 	// ask for confirmation
 	fqnPath := path.Join(config.BasePath, envResult, stageName)
 	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new stage in %s", fqnPath), false)
@@ -46,20 +60,6 @@ func CreateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.
 	}
 	if !confirmation {
 		return nil, fmt.Errorf("confirmation denied")
-	}
-
-	// let's ask if the user want to add additional properties
-	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
-	if err != nil {
-		return nil, err
-	}
-	properties := map[string]string{}
-	if createProperties {
-		pts, err := askForProperties(writer, reader)
-		if err != nil {
-			return nil, err
-		}
-		properties = pts
 	}
 
 	return &CarrierCreateStage{

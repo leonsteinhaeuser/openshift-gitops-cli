@@ -58,7 +58,7 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 	}
 	properties := map[string]string{}
 	if createProperties {
-		pts, err := askForProperties(writer, reader)
+		pts, err := askForProperties(config.EnvStageProperty(envResult, stageResult), writer, reader)
 		if err != nil {
 			return nil, err
 		}
