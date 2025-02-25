@@ -24,7 +24,7 @@ var (
 
 			// TODO: add the cluster to the project config
 			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
-				Properties: ccc.Properties,
+				Properties: utils.MergeMaps(ccc.Properties, projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Properties),
 			}
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {
@@ -77,7 +77,8 @@ var (
 			}
 
 			projectConfig.Environments[cc.Environment].Stages[cc.StageName] = project.Stage{
-				Clusters: map[string]project.Cluster{},
+				Properties: cc.Properties,
+				Clusters:   map[string]project.Cluster{},
 			}
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {

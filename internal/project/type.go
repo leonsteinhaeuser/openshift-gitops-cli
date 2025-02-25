@@ -12,11 +12,12 @@ type Environment struct {
 }
 
 type Stage struct {
-	Name     string             `json:"-"`
-	Clusters map[string]Cluster `json:"clusters"`
+	Name       string             `json:"-"`
+	Properties map[string]string  `json:"properties"`
+	Clusters   map[string]Cluster `json:"clusters"`
 }
 
 type Cluster struct {
-	Name       string         `json:"-"`
-	Properties map[string]any `json:"properties"`
+	Name       string            `json:"-"`
+	Properties map[string]string `json:"properties"`
 }

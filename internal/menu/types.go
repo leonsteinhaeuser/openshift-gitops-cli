@@ -4,10 +4,11 @@ type CarrierCreateCluster struct {
 	Environment string
 	Stage       string
 	ClusterName string
-	Properties  map[string]any
+	Properties  map[string]string
 }
 
 type CarrierCreateStage struct {
 	Environment string
 	StageName   string
+	Properties  map[string]string
 }
