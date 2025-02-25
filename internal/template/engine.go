@@ -3,13 +3,17 @@ package template
 import (
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/leonsteinhaeuser/openshift-project-bootstrap-cli/internal/menu"
 )
 
 type Template struct {
-	Path             string
+	// Path defines the location to the manifest.yaml file
+	Path string
+	// TemplateManifest is the content of the manifest.yaml file
 	TemplateManifest TemplateManifest
 }
 
@@ -40,14 +44,44 @@ func loadAsTemplate(t Template) ([]TemplateCarrier, error) {
 	for _, file := range t.TemplateManifest.Files {
 		fpath := path.Join(t.Path, file)
 
-		tmpl, err := parseFile(fpath)
+		finfo, err := os.Stat(fpath)
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, TemplateCarrier{
-			TemplateName: t.TemplateManifest.Name,
-			FileName:     file,
-			Template:     tmpl,
+
+		if !finfo.IsDir() {
+			// is a file
+			tmpl, err := parseFile(fpath)
+			if err != nil {
+				return nil, err
+			}
+			tc := TemplateCarrier{
+				TemplateName: t.TemplateManifest.Name,
+				FileName:     file,
+				Template:     tmpl,
+			}
+			files = append(files, tc)
+			continue
+		}
+
+		// if a directory
+		// load all files in the directory
+		filepath.WalkDir(fpath, func(fpath string, d os.DirEntry, err error) error {
+			if d.IsDir() {
+				// we don't care about directories
+				return nil
+			}
+			tmpl, err := parseFile(fpath)
+			if err != nil {
+				return err
+			}
+			tc := TemplateCarrier{
+				TemplateName: t.TemplateManifest.Name,
+				FileName:     strings.TrimPrefix(fpath, t.Path),
+				Template:     tmpl,
+			}
+			files = append(files, tc)
+			return nil
 		})
 	}
 	return files, nil
@@ -69,6 +103,10 @@ func parseFile(fpath string) (*template.Template, error) {
 // renderTemplate renders the template with the given carrier and writes it to the file system
 func renderTemplate(basePath string, ccc menu.CarrierCreateCluster, t TemplateCarrier) error {
 	dpath := path.Join(basePath, ccc.Environment, ccc.Stage, ccc.ClusterName, t.TemplateName)
+	if fd := path.Dir(t.FileName); fd != "." {
+		t.FileName = strings.TrimPrefix(t.FileName, fd)
+		dpath = path.Join(dpath, fd)
+	}
 	err := os.MkdirAll(dpath, 0755)
 	if err != nil {
 		return err
