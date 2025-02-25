@@ -51,6 +51,20 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		return nil, err
 	}
 
+	// let's ask if the user want to add additional properties
+	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
+	if err != nil {
+		return nil, err
+	}
+	properties := map[string]string{}
+	if createProperties {
+		pts, err := askForProperties(writer, reader)
+		if err != nil {
+			return nil, err
+		}
+		properties = pts
+	}
+
 	// ask for confirmation
 	fqnPath := path.Join(config.BasePath, envResult, stageResult, clusterName)
 	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new cluster in %s", fqnPath), false)
@@ -60,9 +74,11 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 	if !confirmation {
 		return nil, fmt.Errorf("confirmation denied")
 	}
+
 	return &CarrierCreateCluster{
 		Environment: envResult,
 		Stage:       stageResult,
 		ClusterName: clusterName,
+		Properties:  properties,
 	}, nil
 }

@@ -7,8 +7,9 @@ type ProjectConfig struct {
 }
 
 type Environment struct {
-	Name   string           `json:"-"`
-	Stages map[string]Stage `json:"stages"`
+	Name       string            `json:"-"`
+	Properties map[string]string `json:"properties"`
+	Stages     map[string]Stage  `json:"stages"`
 }
 
 type Stage struct {

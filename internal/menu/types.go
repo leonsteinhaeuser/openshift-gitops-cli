@@ -12,3 +12,8 @@ type CarrierCreateStage struct {
 	StageName   string
 	Properties  map[string]string
 }
+
+type CarrierCreateEnvironment struct {
+	EnvironmentName string
+	Properties      map[string]string
+}

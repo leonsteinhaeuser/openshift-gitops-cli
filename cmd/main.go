@@ -22,8 +22,13 @@ var (
 				return err
 			}
 
+			cprops := ccc.Properties
+			// merge properties from environment and stage
+			props := utils.MergeMaps(projectConfig.Environments[ccc.Environment].Properties, projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Properties, ccc.Properties)
+			ccc.Properties = props
+
 			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
-				Properties: utils.MergeMaps(ccc.Properties, projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Properties),
+				Properties: cprops,
 			}
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {
@@ -53,8 +58,9 @@ var (
 				projectConfig.Environments = map[string]project.Environment{}
 			}
 
-			projectConfig.Environments[*env] = project.Environment{
-				Stages: map[string]project.Stage{},
+			projectConfig.Environments[env.EnvironmentName] = project.Environment{
+				Properties: env.Properties,
+				Stages:     map[string]project.Stage{},
 			}
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {

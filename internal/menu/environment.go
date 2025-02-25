@@ -12,7 +12,7 @@ import (
 
 // CreateEnvironment creates a context menu to create a new environment
 // As part of this we ask for the environment name
-func CreateEnvironment(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*string, error) {
+func CreateEnvironment(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*CarrierCreateEnvironment, error) {
 	environmentName, err := cli.StringQuestion(writer, reader, "Environment Name", "", func(s string) error {
 		if s == "" {
 			return fmt.Errorf("environment name cannot be empty")
@@ -35,5 +35,23 @@ func CreateEnvironment(config *project.ProjectConfig, writer io.Writer, reader *
 	if !confirmation {
 		return nil, fmt.Errorf("confirmation denied")
 	}
-	return &environmentName, nil
+
+	// let's ask if the user want to add additional properties
+	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
+	if err != nil {
+		return nil, err
+	}
+	properties := map[string]string{}
+	if createProperties {
+		pts, err := askForProperties(writer, reader)
+		if err != nil {
+			return nil, err
+		}
+		properties = pts
+	}
+
+	return &CarrierCreateEnvironment{
+		EnvironmentName: environmentName,
+		Properties:      properties,
+	}, nil
 }
