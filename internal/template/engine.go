@@ -39,23 +39,31 @@ func loadAsTemplate(t Template) ([]TemplateCarrier, error) {
 	files := []TemplateCarrier{}
 	for _, file := range t.TemplateManifest.Files {
 		fpath := path.Join(t.Path, file)
-		// FIXME: this is not efficient
-		bts, err := os.ReadFile(fpath)
-		if err != nil {
-			return nil, err
-		}
-		// parse the template
-		tpl, err := template.New("template").Parse(string(bts))
+
+		tmpl, err := parseFile(fpath)
 		if err != nil {
 			return nil, err
 		}
 		files = append(files, TemplateCarrier{
 			TemplateName: t.TemplateManifest.Name,
 			FileName:     file,
-			Template:     tpl,
+			Template:     tmpl,
 		})
 	}
 	return files, nil
+}
+
+func parseFile(fpath string) (*template.Template, error) {
+	bts, err := os.ReadFile(fpath)
+	if err != nil {
+		return nil, err
+	}
+	// parse the template
+	tpl, err := template.New("template").Parse(string(bts))
+	if err != nil {
+		return nil, err
+	}
+	return tpl, nil
 }
 
 // renderTemplate renders the template with the given carrier and writes it to the file system
