@@ -22,7 +22,6 @@ var (
 				return err
 			}
 
-			// TODO: add the cluster to the project config
 			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
 				Properties: utils.MergeMaps(ccc.Properties, projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Properties),
 			}
@@ -61,7 +60,6 @@ var (
 			if err != nil {
 				return err
 			}
-			// TODO: use the returned carrier to create the environment
 			return nil
 		},
 		"Create Stage": func() error {
@@ -84,7 +82,6 @@ var (
 			if err != nil {
 				return err
 			}
-			// TODO: use the returned carrier to create the stage
 			return nil
 		},
 	}
