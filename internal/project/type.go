@@ -1,20 +1,22 @@
 package project
 
 type ProjectConfig struct {
-	BasePath     string
-	Environments map[string]Environment `yaml:"environments"`
+	BasePath         string                 `json:"basePath"`
+	TemplateBasePath string                 `json:"templateBasePath"`
+	Environments     map[string]Environment `json:"environments"`
 }
 
 type Environment struct {
-	Name   string           `yaml:"-"`
-	Stages map[string]Stage `yaml:"stages"`
+	Name   string           `json:"-"`
+	Stages map[string]Stage `json:"stages"`
 }
 
 type Stage struct {
-	Name     string             `yaml:"-"`
-	Clusters map[string]Cluster `yaml:"clusters"`
+	Name     string             `json:"-"`
+	Clusters map[string]Cluster `json:"clusters"`
 }
 
 type Cluster struct {
-	Name string `yaml:"-"`
+	Name       string         `json:"-"`
+	Properties map[string]any `json:"properties"`
 }
