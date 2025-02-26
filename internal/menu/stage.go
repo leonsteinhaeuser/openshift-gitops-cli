@@ -65,7 +65,7 @@ func CreateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.
 	return &CarrierCreateStage{
 		Environment: envResult,
 		StageName:   stageName,
-		Properties:  properties,
+		Properties:  utils.ReduceMap(properties, config.Environments[envResult].Properties),
 	}, nil
 }
 
@@ -109,6 +109,6 @@ func UpdateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.
 	return &CarrierCreateStage{
 		Environment: envResult,
 		StageName:   stageResult,
-		Properties:  properties,
+		Properties:  utils.ReduceMap(properties, config.Environments[envResult].Properties),
 	}, nil
 }

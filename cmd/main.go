@@ -166,7 +166,13 @@ func init() {
 			os.Exit(1)
 			return
 		}
-		f.Close()
+		defer f.Close()
+		_, err = f.WriteString("basePath: overlays/\ntemplateBasePath: templates/\n")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+			return
+		}
 	}
 
 	pc, err := project.ParseConfig(PROJECTFILENAME)
