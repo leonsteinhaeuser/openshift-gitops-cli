@@ -48,6 +48,28 @@ var (
 			}
 			return nil
 		},
+		"Update Cluster": func() error {
+			ccc, err := menu.UpdateCluster(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
+			if err != nil {
+				return err
+			}
+
+			cprops := ccc.Properties
+			// merge properties from environment and stage
+			props := utils.MergeMaps(projectConfig.Environments[ccc.Environment].Properties, projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Properties, ccc.Properties)
+			ccc.Properties = props
+
+			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
+				Properties: cprops,
+			}
+			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
+			if err != nil {
+				return err
+			}
+
+			// TODO: we might need to update the templates
+			return nil
+		},
 		"Create Environment": func() error {
 			env, err := menu.CreateEnvironment(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
 			if err != nil {

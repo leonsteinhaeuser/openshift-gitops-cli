@@ -29,3 +29,7 @@ type Cluster struct {
 func (pc *ProjectConfig) EnvStageProperty(environment, stage string) map[string]string {
 	return utils.MergeMaps(pc.Environments[environment].Properties, pc.Environments[environment].Stages[stage].Properties)
 }
+
+func (pc *ProjectConfig) EnvStageClusterProperty(environment, stage, cluster string) map[string]string {
+	return utils.MergeMaps(pc.EnvStageProperty(environment, stage), pc.Environments[environment].Stages[stage].Clusters[cluster].Properties)
+}

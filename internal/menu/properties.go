@@ -43,7 +43,7 @@ func askForProperties(properties map[string]string, writer io.Writer, reader *bu
 			}
 			properties[propertyKey] = newVal
 
-			isDone, err := cli.BooleanQuestion(writer, reader, "Do you want to add another property?", false)
+			isDone, err := cli.BooleanQuestion(writer, reader, "Do you want to add or update another property?", false)
 			if err != nil {
 				return nil, err
 			}
