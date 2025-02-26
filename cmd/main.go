@@ -22,6 +22,11 @@ var (
 				return err
 			}
 
+			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePreCreateHooks(os.Stdout, os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to execute pre create hooks: %w", err)
+			}
+
 			cprops := ccc.Properties
 			// merge properties from environment and stage
 			props := utils.MergeMaps(projectConfig.Environments[ccc.Environment].Properties, projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Properties, ccc.Properties)
@@ -46,12 +51,22 @@ var (
 					return err
 				}
 			}
+
+			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePostCreateHooks(os.Stdout, os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to execute post create hooks: %w", err)
+			}
 			return nil
 		},
 		"Update Cluster": func() error {
 			ccc, err := menu.UpdateCluster(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
 			if err != nil {
 				return err
+			}
+
+			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePreUpdateHooks(os.Stdout, os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to execute pre update hooks: %w", err)
 			}
 
 			cprops := ccc.Properties
@@ -65,6 +80,11 @@ var (
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {
 				return err
+			}
+
+			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePostUpdateHooks(os.Stdout, os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to execute post update hooks: %w", err)
 			}
 
 			// TODO: we might need to update the templates
@@ -111,6 +131,11 @@ var (
 				return err
 			}
 
+			err = projectConfig.Environments[cc.Environment].Actions.ExecutePreCreateHooks(os.Stdout, os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to execute pre create hooks: %w", err)
+			}
+
 			if projectConfig.Environments[cc.Environment].Stages == nil {
 				projectConfig.Environments[cc.Environment] = project.Environment{
 					Stages: map[string]project.Stage{},
@@ -124,12 +149,22 @@ var (
 			if err != nil {
 				return err
 			}
+
+			err = projectConfig.Environments[cc.Environment].Actions.ExecutePostCreateHooks(os.Stdout, os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to execute post create hooks: %w", err)
+			}
 			return nil
 		},
 		"Update Stage": func() error {
 			cc, err := menu.UpdateStage(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
 			if err != nil {
 				return err
+			}
+
+			err = projectConfig.Environments[cc.Environment].Actions.ExecutePreUpdateHooks(os.Stdout, os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to execute pre update hooks: %w", err)
 			}
 
 			projectConfig.Environments[cc.Environment].Stages[cc.StageName] = project.Stage{
@@ -139,6 +174,11 @@ var (
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {
 				return err
+			}
+
+			err = projectConfig.Environments[cc.Environment].Actions.ExecutePostUpdateHooks(os.Stdout, os.Stderr)
+			if err != nil {
+				return fmt.Errorf("failed to execute post update hooks: %w", err)
 			}
 			return nil
 		},
