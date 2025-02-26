@@ -90,6 +90,21 @@ var (
 			}
 			return nil
 		},
+		"Update Environment": func() error {
+			env, err := menu.UpdateEnvironment(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
+			if err != nil {
+				return err
+			}
+
+			envC := projectConfig.Environments[env.EnvironmentName]
+			envC.Properties = env.Properties
+			projectConfig.Environments[env.EnvironmentName] = envC
+			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
 		"Create Stage": func() error {
 			cc, err := menu.CreateStage(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
 			if err != nil {
@@ -100,6 +115,21 @@ var (
 				projectConfig.Environments[cc.Environment] = project.Environment{
 					Stages: map[string]project.Stage{},
 				}
+			}
+
+			envC := projectConfig.Environments[cc.Environment].Stages[cc.StageName]
+			envC.Properties = cc.Properties
+			projectConfig.Environments[cc.Environment].Stages[cc.StageName] = envC
+			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+		"Update Stage": func() error {
+			cc, err := menu.UpdateStage(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
+			if err != nil {
+				return err
 			}
 
 			projectConfig.Environments[cc.Environment].Stages[cc.StageName] = project.Stage{

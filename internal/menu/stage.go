@@ -68,3 +68,47 @@ func CreateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.
 		Properties:  properties,
 	}, nil
 }
+
+// UpdateStage creates a context menu to update an existing stage
+// As part of this we ask for the environment name and stage name
+func UpdateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*CarrierCreateStage, error) {
+	// read environments
+	prompt := promptui.Select{
+		Label: "Select Environment",
+		Items: utils.MapKeysToList(config.Environments),
+	}
+	_, envResult, err := prompt.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	// read stage
+	prompt = promptui.Select{
+		Label: "Select Stage",
+		Items: utils.MapKeysToList(config.Environments[envResult].Stages),
+	}
+	_, stageResult, err := prompt.Run()
+	if err != nil {
+		return nil, err
+	}
+
+	// let's ask if the user want to add additional properties
+	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to update properties?", false)
+	if err != nil {
+		return nil, err
+	}
+	properties := map[string]string{}
+	if createProperties {
+		pts, err := askForProperties(config.Environments[envResult].Stages[stageResult].Properties, writer, reader)
+		if err != nil {
+			return nil, err
+		}
+		properties = pts
+	}
+
+	return &CarrierCreateStage{
+		Environment: envResult,
+		StageName:   stageResult,
+		Properties:  properties,
+	}, nil
+}

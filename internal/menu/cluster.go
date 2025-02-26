@@ -108,33 +108,9 @@ func UpdateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 
 	// read clusters
 	prompt = promptui.Select{
-		Label: "Select Cluster",
-		Items: utils.MapKeysToList(config.Environments[envResult].Stages[stageResult].Clusters),
-		Templates: &promptui.SelectTemplates{
-			Label:    "{{ . }}",
-			Active:   "",
-			Inactive: "",
-			Selected: "",
-			Details:  "{{ properties . }}",
-			FuncMap: func() map[string]any {
-				funcmap := promptui.FuncMap
-				funcmap["properties"] = func(clusterName string) string {
-					props := config.EnvStageClusterProperty(envResult, stageResult, clusterName)
-					resultString := "--------------------------------\nCluster Properties:\n"
-
-					rslt := []string{}
-					for k, v := range props {
-						rslt = append(rslt, fmt.Sprintf("%s: %s", k, v))
-					}
-
-					for _, v := range rslt {
-						resultString += "\t" + v + "\n"
-					}
-					return resultString
-				}
-				return funcmap
-			}(),
-		},
+		Label:     "Select Cluster",
+		Items:     utils.MapKeysToList(config.Environments[envResult].Stages[stageResult].Clusters),
+		Templates: helperSelectTemplate(config, envResult, stageResult),
 	}
 	_, clusterResult, err := prompt.Run()
 	if err != nil {
