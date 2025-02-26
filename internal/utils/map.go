@@ -17,3 +17,23 @@ func MergeMaps[k comparable, v any](maps ...map[k]v) map[k]v {
 	}
 	return result
 }
+
+// ReduceMap removes all keys from the origin map that are present in any of the other maps with the same value
+func ReduceMap[k comparable, v comparable](origin map[k]v, maps ...map[k]v) map[k]v {
+	result := make(map[k]v)
+	for key, value := range origin {
+		keep := true
+		for _, m := range maps {
+			if val, exists := m[key]; exists {
+				if val == value {
+					keep = false
+					break
+				}
+			}
+		}
+		if keep {
+			result[key] = value
+		}
+	}
+	return result
+}

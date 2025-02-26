@@ -79,7 +79,7 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		Environment: envResult,
 		Stage:       stageResult,
 		ClusterName: clusterName,
-		Properties:  properties,
+		Properties:  utils.ReduceMap(properties, config.EnvStageProperty(envResult, stageResult)),
 	}, nil
 }
 
@@ -135,6 +135,6 @@ func UpdateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		Environment: envResult,
 		Stage:       stageResult,
 		ClusterName: clusterResult,
-		Properties:  properties,
+		Properties:  utils.ReduceMap(properties, config.EnvStageProperty(envResult, stageResult)),
 	}, nil
 }
