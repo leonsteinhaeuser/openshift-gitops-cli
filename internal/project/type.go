@@ -11,12 +11,14 @@ type ProjectConfig struct {
 type Environment struct {
 	Name       string            `json:"-"`
 	Properties map[string]string `json:"properties"`
+	Actions    Actions           `json:"actions"`
 	Stages     map[string]Stage  `json:"stages"`
 }
 
 type Stage struct {
 	Name       string             `json:"-"`
 	Properties map[string]string  `json:"properties"`
+	Actions    Actions            `json:"actions"`
 	Clusters   map[string]Cluster `json:"clusters"`
 }
 
@@ -32,4 +34,11 @@ func (pc *ProjectConfig) EnvStageProperty(environment, stage string) map[string]
 
 func (pc *ProjectConfig) EnvStageClusterProperty(environment, stage, cluster string) map[string]string {
 	return utils.MergeMaps(pc.EnvStageProperty(environment, stage), pc.Environments[environment].Stages[stage].Clusters[cluster].Properties)
+}
+
+type Actions struct {
+	PreCreateHooks  []string `json:"preCreateHooks"`
+	PostCreateHooks []string `json:"postCreateHooks"`
+	PreUpdateHooks  []string `json:"preUpdateHooks"`
+	PostUpdateHooks []string `json:"postUpdateHooks"`
 }
