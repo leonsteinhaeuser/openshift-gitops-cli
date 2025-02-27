@@ -26,19 +26,14 @@ After you have created the environment, stage, and cluster, the CLI will create 
 ├── PROJECT.yaml
 ├── examples
 │   └── templates
-│       ├── addons
-│       │   └── disco-operator
-│       │       ├── kustomization.yaml
-│       │       ├── manifest.yaml
-│       │       └── patch.yaml
 │       ├── appofapps
 │       │   ├── kustomization.yaml
 │       │   ├── manifest.yaml
 │       │   └── values.yaml
 │       └── cluster-config
+│           ├── manifest.yaml
 │           ├── kyverno
 │           │   └── kustomization.yaml
-│           ├── manifest.yaml
 │           └── other_test_with_patches
 │               ├── kustomization.yaml
 │               └── patch.yaml
