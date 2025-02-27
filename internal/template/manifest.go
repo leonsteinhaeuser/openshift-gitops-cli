@@ -1,9 +1,12 @@
 package template
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"sigs.k8s.io/yaml"
 )
@@ -33,7 +36,8 @@ files:
 */
 
 type TemplateManifest struct {
-	Name string
+	BasePath string `json:"-"`
+	Name     string
 	// Properties is a map of properties that can be set when rendering the template
 	// The key is the name of the property, the value is the property definition
 	// In the manifest file, the properties can be defined to be required or have a default value
@@ -43,10 +47,87 @@ type TemplateManifest struct {
 	Files []string
 }
 
+type PropertyType string
+
+const (
+	PropertyTypeString PropertyType = "string"
+	PropertyTypeBool   PropertyType = "bool"
+	PropertyTypeInt    PropertyType = "int"
+)
+
+// checkType validates the given value against the property type
+// If the value is valid, it will be returned, otherwise an error is returned
+func (p PropertyType) checkType(value any) (any, error) {
+	switch p {
+	case PropertyTypeString:
+		val, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("expected string, got %T", value)
+		}
+		return val, nil
+	case PropertyTypeBool:
+		boolVal, err := strconv.ParseBool(value.(string))
+		if err != nil {
+			return nil, fmt.Errorf("expected bool, got %T", value)
+		}
+		return boolVal, nil
+	case PropertyTypeInt:
+		intVal, err := strconv.ParseInt(value.(string), 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("expected int, got %T", value)
+		}
+		return intVal, nil
+	default:
+		return nil, fmt.Errorf("unknown property type %s", p)
+	}
+}
+
 type Property struct {
 	Required    bool
-	Default     string
+	Default     any
+	Type        PropertyType
 	Description string
+}
+
+// Check validates the given value against the property definition
+func (p Property) ParseValue(value any) (any, error) {
+	v := p.Default
+	if value != nil {
+		v = value
+	}
+	if p.Required && v == nil {
+		return nil, fmt.Errorf("property is required")
+	}
+	if v == nil {
+		return nil, nil
+	}
+	return p.Type.checkType(v)
+}
+
+// LoadManifest reads the manifest file at the given path and returns the parsed values
+// If the path is a directory, it will try to find the manifest file in it
+func LoadManifest(path string) (*TemplateManifest, error) {
+	// if user provides a directory, try to find the manifest file in it
+	if !strings.HasSuffix(path, "manifest.yaml") && !strings.HasSuffix(path, "manifest.yml") {
+		path = filepath.Join(path, "manifest.yaml")
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			path = strings.TrimSuffix(path, "manifest.yaml") + "manifest.yml"
+		}
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			return nil, fmt.Errorf("no manifest file found in %s", path)
+		}
+	}
+	// read manifest file and parse it
+	bts, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	t := &TemplateManifest{}
+	err = yaml.Unmarshal(bts, &t)
+	if err != nil {
+		return nil, err
+	}
+	return t, nil
 }
 
 // LoadTemplateManifest walks the given basePath and loads all template manifests files it finds
@@ -69,19 +150,14 @@ func LoadTemplateManifest(basePath string) ([]Template, error) {
 		}
 
 		// now read the manifest file
-		bts, err := os.ReadFile(fpath)
-		if err != nil {
-			return err
-		}
-		t := TemplateManifest{}
-		err = yaml.Unmarshal(bts, &t)
+		tm, err := LoadManifest(fpath)
 		if err != nil {
 			return err
 		}
 
 		templates = append(templates, Template{
 			Path:             filepath.Dir(fpath),
-			TemplateManifest: t,
+			TemplateManifest: *tm,
 		})
 		return nil
 	})

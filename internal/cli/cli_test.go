@@ -95,7 +95,7 @@ func TestStringQuestion(t *testing.T) {
 		reader       *bufio.Reader
 		label        string
 		defaultValue string
-		validations  []ValidationFunc
+		validations  []ValidationFunc[string]
 	}
 	tests := []struct {
 		name       string
@@ -150,7 +150,7 @@ func TestStringQuestion(t *testing.T) {
 				reader:       bufio.NewReader(bytes.NewBufferString("invalid\n")),
 				label:        "What is your answer?",
 				defaultValue: "default",
-				validations: []ValidationFunc{
+				validations: []ValidationFunc[string]{
 					func(s string) error {
 						return fmt.Errorf("invalid input")
 					},
@@ -166,7 +166,7 @@ func TestStringQuestion(t *testing.T) {
 				reader:       bufio.NewReader(bytes.NewBufferString("invalid\n")),
 				label:        "What is your answer?",
 				defaultValue: "default",
-				validations: []ValidationFunc{
+				validations: []ValidationFunc[string]{
 					func(s string) error {
 						return nil
 					},

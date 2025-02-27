@@ -51,6 +51,29 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		return nil, err
 	}
 
+	addonConfig := map[string]map[string]any{}
+	for addonName, cfg := range config.ParsedAddons {
+		shouldAddonBeEnabled, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Do you want to enable %s?", addonName), config.Addons[addonName].DefaultEnabled)
+		if err != nil {
+			return nil, err
+		}
+		if !shouldAddonBeEnabled {
+			// addon should not be enabled
+			continue
+		}
+
+		// ask for addon properties
+		addonProperties, err := templateManifestPropertiesMenu(
+			writer,
+			reader,
+			config.Environments[envResult].Stages[stageResult].Clusters[clusterName],
+			cfg)
+		if err != nil {
+			return nil, err
+		}
+		addonConfig[addonName] = addonProperties
+	}
+
 	// let's ask if the user want to add additional properties
 	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
 	if err != nil {
@@ -79,6 +102,7 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		Environment: envResult,
 		Stage:       stageResult,
 		ClusterName: clusterName,
+		Addons:      addonConfig,
 		Properties:  utils.ReduceMap(properties, config.EnvStageProperty(envResult, stageResult)),
 	}, nil
 }

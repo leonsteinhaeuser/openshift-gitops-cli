@@ -3,14 +3,16 @@ package project
 import (
 	"io"
 
+	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/template"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
 )
 
 type ProjectConfig struct {
-	BasePath         string                 `json:"basePath"`
-	TemplateBasePath string                 `json:"templateBasePath"`
-	Addons           map[string]Addon       `json:"addons"`
-	Environments     map[string]Environment `json:"environments"`
+	BasePath         string                               `json:"basePath"`
+	TemplateBasePath string                               `json:"templateBasePath"`
+	Addons           map[string]Addon                     `json:"addons"`
+	ParsedAddons     map[string]template.TemplateManifest `json:"-"`
+	Environments     map[string]Environment               `json:"environments"`
 }
 
 type Environment struct {
@@ -28,8 +30,9 @@ type Stage struct {
 }
 
 type Cluster struct {
-	Name       string            `json:"-"`
-	Properties map[string]string `json:"properties"`
+	Name            string                    `json:"-"`
+	AddonProperties map[string]map[string]any `json:"addonProperties"`
+	Properties      map[string]string         `json:"properties"`
 }
 
 // EnvStageProperty merges the properties of the environment and stage and returns them as a map

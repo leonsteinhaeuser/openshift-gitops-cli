@@ -33,7 +33,8 @@ var (
 			ccc.Properties = props
 
 			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
-				Properties: cprops,
+				Properties:      cprops,
+				AddonProperties: ccc.Addons,
 			}
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {
@@ -239,6 +240,22 @@ func init() {
 		return
 	}
 	projectConfig = pc
+
+	if projectConfig.ParsedAddons == nil {
+		projectConfig.ParsedAddons = map[string]template.TemplateManifest{}
+	}
+
+	// load all addons, so we can use them later
+	for k, v := range projectConfig.Addons {
+		tm, err := template.LoadManifest(v.Path)
+		if err != nil {
+			fmt.Printf("An error occurred while loading the addon [%s] manifest file: %s, %v", k, v.Path, err)
+			return
+		}
+		tm.Name = k
+		tm.BasePath = v.Path
+		projectConfig.ParsedAddons[k] = *tm
+	}
 }
 
 func main() {
