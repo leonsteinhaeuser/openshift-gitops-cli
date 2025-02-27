@@ -33,7 +33,6 @@ func helperSelectTemplate(config *project.ProjectConfig, environment, stage stri
 				resultString := ""
 				// add addons to the result string
 				if len(addons) > 0 {
-					fmt.Println("Addons found")
 					resultString += "--------------------------------\nAddons:\n"
 					for k, v := range addons {
 						resultString += fmt.Sprintf("\t%s:\n", k)

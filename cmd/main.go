@@ -46,12 +46,21 @@ var (
 				return err
 			}
 
+			addons := map[string]template.AddonData{}
+			for k, v := range ccc.Addons {
+				addons[k] = template.AddonData{
+					Annotations: projectConfig.ParsedAddons[k].Annotations,
+					Properties:  v,
+				}
+			}
+
 			for _, t := range templates {
 				err = t.Render(projectConfig.BasePath, template.TemplateData{
 					Environment: ccc.Environment,
 					Stage:       ccc.Stage,
 					ClusterName: ccc.ClusterName,
 					Properties:  ccc.Properties,
+					Addons:      addons,
 				})
 				if err != nil {
 					return err

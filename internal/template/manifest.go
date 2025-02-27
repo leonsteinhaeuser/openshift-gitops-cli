@@ -37,14 +37,17 @@ files:
 
 type TemplateManifest struct {
 	BasePath string `json:"-"`
-	Name     string
+	Name     string `json:"name"`
 	// Properties is a map of properties that can be set when rendering the template
 	// The key is the name of the property, the value is the property definition
 	// In the manifest file, the properties can be defined to be required or have a default value
 	// The description key will be used to display a description of the property
-	Properties map[string]Property
+	Properties map[string]Property `json:"properties"`
+	// Annotations is a map of annotations that can be set when rendering the template
+	// The key is the name of the annotation, the value is the annotation definition
+	Annotations map[string]string `json:"annotations"`
 	// Files is a list of relative paths to files that are part of the template
-	Files []string
+	Files []string `json:"files"`
 }
 
 type PropertyType string

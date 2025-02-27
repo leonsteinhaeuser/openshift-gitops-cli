@@ -25,7 +25,13 @@ type TemplateData struct {
 	Environment string
 	Stage       string
 	ClusterName string
+	Addons      map[string]AddonData
 	Properties  map[string]string
+}
+
+type AddonData struct {
+	Annotations map[string]string
+	Properties  map[string]any
 }
 
 // Render renders the template with the given carrier
@@ -98,7 +104,7 @@ func parseFile(fpath string) (*template.Template, error) {
 		return nil, err
 	}
 	// parse the template
-	tpl, err := template.New("template").Parse(string(bts))
+	tpl, err := template.New("template").Funcs(funcMap()).Parse(string(bts))
 	if err != nil {
 		return nil, err
 	}
