@@ -30,9 +30,9 @@ type Stage struct {
 }
 
 type Cluster struct {
-	Name            string                    `json:"-"`
-	AddonProperties map[string]map[string]any `json:"addonProperties"`
-	Properties      map[string]string         `json:"properties"`
+	Name       string                    `json:"-"`
+	Addons     map[string]map[string]any `json:"addons"`
+	Properties map[string]string         `json:"properties"`
 }
 
 // EnvStageProperty merges the properties of the environment and stage and returns them as a map

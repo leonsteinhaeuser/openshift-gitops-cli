@@ -33,8 +33,8 @@ var (
 			ccc.Properties = props
 
 			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
-				Properties:      cprops,
-				AddonProperties: ccc.Addons,
+				Properties: cprops,
+				Addons:     ccc.Addons,
 			}
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {
