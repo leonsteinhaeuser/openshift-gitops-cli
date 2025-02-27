@@ -3,7 +3,7 @@ package menu
 import (
 	"fmt"
 
-	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/project"
+	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
 	"github.com/manifoldco/promptui"
 )
 

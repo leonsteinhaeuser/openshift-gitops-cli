@@ -1,6 +1,6 @@
 package project
 
-import "github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/utils"
+import "github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
 
 type ProjectConfig struct {
 	BasePath         string                 `json:"basePath"`

@@ -6,9 +6,9 @@ import (
 	"io"
 	"path"
 
-	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/cli"
-	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/project"
-	"github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli/internal/utils"
+	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
+	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
+	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
 	"github.com/manifoldco/promptui"
 )
 

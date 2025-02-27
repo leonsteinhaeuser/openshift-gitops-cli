@@ -1,4 +1,4 @@
-module github.com/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli
+module github.com/leonsteinhaeuser/openshift-gitops-cli
 
 go 1.23.2
 
