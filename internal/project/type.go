@@ -9,6 +9,7 @@ import (
 type ProjectConfig struct {
 	BasePath         string                 `json:"basePath"`
 	TemplateBasePath string                 `json:"templateBasePath"`
+	Addons           map[string]Addon       `json:"addons"`
 	Environments     map[string]Environment `json:"environments"`
 }
 
@@ -81,4 +82,10 @@ type Command struct {
 // execute executes the command with the given arguments
 func (c Command) execute(stdout, errout io.Writer) error {
 	return utils.ExecuteShellCommand(stdout, errout, c.Command, c.Args...)
+}
+
+type Addon struct {
+	Name           string `json:"-"`
+	DefaultEnabled bool   `json:"defaultEnabled"`
+	Path           string `json:"path"`
 }

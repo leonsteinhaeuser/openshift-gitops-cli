@@ -182,6 +182,18 @@ var (
 			}
 			return nil
 		},
+		"Add Addon": func() error {
+			err := menu.AddAddon(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
+			if err != nil {
+				return err
+			}
+
+			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
 	}
 
 	projectConfig = &project.ProjectConfig{}
