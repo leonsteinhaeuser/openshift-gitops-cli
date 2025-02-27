@@ -1,0 +1,79 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - "**"
+    paths-ignore:
+      - "*.md"
+      - LICENSE
+      - docker-compose*
+      - .dockerignore
+      #- .github/
+      - .gitignore
+      - .gitmodules
+      - docs/
+  pull_request:
+    branches:
+      - "!dependabot/**"
+
+env:
+  go_version: '1.23'
+
+jobs:
+  vetting:
+    name: vetting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: vetting
+        shell: bash
+        run: go vet ./...
+
+  linting:
+    name: linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=3m --issues-exit-code=1 ./...
+          only-new-issues: true
+
+  unit-tests:
+    name: unit tests
+    runs-on: ubuntu-latest
+    needs:
+      - vetting
+      - linting
+    steps:
+      - name: Install go ${{ env.go_version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.go_version }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run unit tests
+        run: go test -v ./...
