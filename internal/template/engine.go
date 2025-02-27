@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/menu"
 )
 
 type Template struct {
@@ -23,14 +21,21 @@ type TemplateCarrier struct {
 	Template     *template.Template
 }
 
+type TemplateData struct {
+	Environment string
+	Stage       string
+	ClusterName string
+	Properties  map[string]string
+}
+
 // Render renders the template with the given carrier
-func (t Template) Render(basePath string, ccc menu.CarrierCreateCluster) error {
+func (t Template) Render(basePath string, td TemplateData) error {
 	files, err := loadAsTemplate(t)
 	if err != nil {
 		return err
 	}
 	for _, file := range files {
-		err = renderTemplate(basePath, ccc, file)
+		err = renderTemplate(basePath, td, file)
 		if err != nil {
 			return err
 		}
@@ -101,8 +106,8 @@ func parseFile(fpath string) (*template.Template, error) {
 }
 
 // renderTemplate renders the template with the given carrier and writes it to the file system
-func renderTemplate(basePath string, ccc menu.CarrierCreateCluster, t TemplateCarrier) error {
-	dpath := path.Join(basePath, ccc.Environment, ccc.Stage, ccc.ClusterName, t.TemplateName)
+func renderTemplate(basePath string, td TemplateData, t TemplateCarrier) error {
+	dpath := path.Join(basePath, td.Environment, td.Stage, td.ClusterName, t.TemplateName)
 	if fd := path.Dir(t.FileName); fd != "." {
 		t.FileName = strings.TrimPrefix(t.FileName, fd)
 		dpath = path.Join(dpath, fd)
@@ -118,7 +123,7 @@ func renderTemplate(basePath string, ccc menu.CarrierCreateCluster, t TemplateCa
 	}
 	defer file.Close()
 
-	err = t.Template.Execute(file, ccc)
+	err = t.Template.Execute(file, td)
 	if err != nil {
 		return err
 	}

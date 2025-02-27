@@ -46,7 +46,12 @@ var (
 			}
 
 			for _, t := range templates {
-				err = t.Render(projectConfig.BasePath, *ccc)
+				err = t.Render(projectConfig.BasePath, template.TemplateData{
+					Environment: ccc.Environment,
+					Stage:       ccc.Stage,
+					ClusterName: ccc.ClusterName,
+					Properties:  ccc.Properties,
+				})
 				if err != nil {
 					return err
 				}
