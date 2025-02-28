@@ -165,12 +165,13 @@ OUTER:
 		}
 		switch propertyKey {
 		case cancelManageAddons:
-			if !allRequiredPropertiesSet(tmpl, c.Addons[tmpl.Name]) {
-				// not all required properties are set
-				fmt.Fprintf(writer, "You must set all required properties to proceed!\n")
-				continue
+			if c.Addons[tmpl.Name] != nil {
+				if !allRequiredPropertiesSet(tmpl, c.Addons[tmpl.Name]) {
+					// not all required properties are set
+					fmt.Fprintf(writer, "You must set all required properties to proceed!\n")
+					continue
+				}
 			}
-
 			// user is done with managing properties
 			break OUTER
 		case enableDisableAddon:
@@ -208,31 +209,6 @@ OUTER:
 			continue
 		}
 		c.Addons[tmpl.Name][propertyKey] = actualValue
-
-		/*
-			confirmation, err := cli.BooleanQuestion(writer, reader, "Do you want to add or update another property?", false)
-			if err != nil {
-				return nil, err
-			}
-			if confirmation {
-				// user wants to add or update another property
-				continue
-			}
-
-			// check if all required properties are set
-			allRequiredSet := true
-			for k, v := range tmpl.Properties {
-				if v.Required && c.Addons[tmpl.Name][k] == nil {
-					allRequiredSet = false
-					fmt.Fprintf(writer, "required property %s is missing\nYou must set all properties to proceed!\n", k)
-				}
-			}
-
-			if allRequiredSet {
-				// user has set all required properties and confirmed to be done
-				break
-			}
-		*/
 	}
 	return c.Addons[tmpl.Name], nil
 }
