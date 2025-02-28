@@ -25,29 +25,209 @@ After you have created the environment, stage, and cluster, the CLI will create 
 ```plaintext
 ├── PROJECT.yaml
 ├── examples
+│   ├── addons
+│   │   └── disco-operator
+│   │       ├── kustomization.yaml
+│   │       ├── manifest.yaml
+│   │       └── patch.yaml
 │   └── templates
-│       ├── appofapps
-│       │   ├── kustomization.yaml
-│       │   ├── manifest.yaml
-│       │   └── values.yaml
-│       └── cluster-config
-│           ├── manifest.yaml
-│           ├── kyverno
-│           │   └── kustomization.yaml
-│           └── other_test_with_patches
+│       └── appofapps
+│           └── database
 │               ├── kustomization.yaml
-│               └── patch.yaml
+│               ├── manifest.yaml
+│               └── values.yaml
 └── overlays
-    └── dev
-        └── testing
-            └── my-cluster
+    └── dev                                           # The environment
+        └── dev01                                     # The stage
+            └── test01                                # The cluster
                 ├── app-of-apps
                 │   ├── kustomization.yaml
                 │   └── values.yaml
-                └── cluster-config
-                    ├── kyverno
-                    │   └── kustomization.yaml
-                    └── other_test_with_patches
-                        ├── kustomization.yaml
-                        └── patch.yaml
+                └── cluster-configs                   # The addon group folder
+                    └── disco-operator                # The addon folder
+                        ├── kustomization.yaml        # The kustomization file
+                        └── patch.yaml                # The patch file (imported by the kustomization file)
+```
+
+## What is an environment and stage?
+
+An environment in terms of infrastructure is a collection of resources that share the same hardware and network. For example, you can have infrastructure at `aws`, `gcp`, `azure` or even `on-prem`. Each of these environments can be named accordingly. For example, you can have an environment called `aws` which is hosted on `aws`, an environment called `gcp` which is hosted on `gcp`, and an environment called `azure` which is hosted on `azure`.
+
+A stage is a subset of an environment. For example, you can have a `aws` environment with multiple stages like `dev`, `staging`, and `production`, and a `gcp` environment with multiple stages like `dev`, `staging`, and `production`. Each stage can have its own set of resources that are used for different purposes. For example, the `dev` stage can be used for development with unrestricted access to resources, the `staging` stage can be used for testing production-like applications, and the `production` stage can be used for running production applications with restricted access to resources.
+
+## What is a cluster?
+
+A cluster is a set of resources that are used to run an application. For example, you can have a cluster that runs a web application, a database, and a cache. A second cluster can run a web application, a database, and a kafka cluster. Each cluster can have a baseline set of resources that are used to provision the cluster. For example, a policy engine, network policies, ingress controllers, monitoring, tracing, and logging or any other resources that are needed to run the application. We call this type of resources `addons`. Addons are pre-configured resources that can be applied to a cluster to extend its functionality. During the cluster creation, you can select which addons you want to apply to the cluster.
+
+### How to create a cluster?
+
+To create a cluster, execute the `ogc` binary and select the "Create Cluster" option. The CLI will ask you for the name of the `environment`, `stage`, and `cluster` name, followed by `addons` that you want to apply to the cluster and `properties` that you want to set for the cluster.
+
+### Example
+
+Let's say you want to create an OpenShift cluster with the following information:
+
+```bash
+Environment: dev
+Stage: dev
+Cluster name: my-cluster
+Addons: [kyverno, monitoring{ingress_host: monitoring.my-domain.local}]
+Properties: [gitURL: https://git.example.com/repo/name.git, gitBranch: main]
+```
+
+1) Create the environment:
+
+```bash
+user@pc % ogc
+✔ Create Environment
+Environment Name: dev
+Do you want to add properties? [Y/N]: y
+Create Property: gitURL
+Property Value: https://git.url/repo/name.git
+Do you want to add another property? [Y/N]: y
+Create Property: gitBranch
+Property Value: main
+Do you want to add another property? [Y/N]: n
+Are you sure to create a new environment in overlays/dev [Y/N]: y
+```
+
+2) Create the stage:
+
+```bash
+user@pc % ogc
+✔ Create Stage
+✔ dev
+Stage Name: dev
+Do you want to add properties? [Y/N]: y
+✔ gitBranch
+Property Value [main]: main
+Do you want to add or update another property? [Y/N]: y
+✔ gitURL
+Property Value [https://git.url/repo/name.git]: https://git.url/repo/name.git
+Do you want to add or update another property? [Y/N]: n
+Are you sure to create a new stage in overlays/dev/dev [Y/N]: y
+```
+
+3) Create the cluster:
+
+```bash
+user@pc % ogc
+✔ Create Cluster
+✔ dev
+✔ dev
+Cluster Name: my-cluster
+✔ kyverno
+✔ monitoring
+✔ Enable / Disable
+Do you really want to enable monitoring? [Y/N]: y
+✔ ingress_host
+Value []: monitoring.my-domain.local
+✔ Done
+Do you want to add properties? [Y/N]: y
+✔ gitURL
+Property Value [https://git.url/repo/name.git]: https://git.example.com/repo/name.git
+Do you want to add or update another property? [Y/N]: y
+✔ gitBranch
+Property Value [main]: main
+Do you want to add or update another property? [Y/N]: n
+Are you sure to create a new cluster in overlays/dev/dev/my-cluster with addons: [kyverno monitoring] [Y/N]: y
+```
+
+When you have created the environment, stage, and cluster, the CLI will create the corresponding entries in the `PROJECT.yaml` and directory structure.
+
+## What is a cluster addon?
+
+A cluster addon is a set of resources that can be applied to an OpenShift cluster to extend its functionality. For example, you can create a cluster addon that installs a set of operators, CRDs, and other resources that are needed to run a specific application on the cluster. The cluster addon can be applied to the cluster using ArgoCD.
+
+### How to create a cluster addon?
+
+To create a cluster addon, you need to create a folder with the name of the addon somewhere in the git repository. Inside the folder, you need to create a `manifest.yaml` file that contains the information about the addon.
+
+```yaml
+name: my-addon                                      # The name of the addon
+properties:                                         # The properties define a set of key-value pairs the user has to enter during cluster creation
+  my-property:                                      # The name of the property
+    description: My property description            # The description of the property
+    type: string                                    # The type of the property (string, int, bool)
+    required: true                                  # If the property is required
+    default: my-default-value                       # The default value of the property
+files:                                              # The files define a set of files that will be created in the cluster folder during cluster creation
+  - values.yaml                                     # A reference to the file inside the same folder as the manifest.yaml
+  - resources/                                      # A reference to the folder inside the same folder as the manifest.yaml
+```
+
+After you have created the `manifest.yaml` file and the files that are needed for the addon, you can add the addon to the `PROJECT.yaml` file. To do this, execute the `ogc` binary and select the "Add Addon" option. The CLI will ask you for the name of the addon and the path to the folder where the addon is located. The CLI will then add the addon to the `PROJECT.yaml` file. The next time you create or update a cluster, the addon will be included in the selection of addons.
+
+### Example
+
+Let's say you want to create a cluster addon that installs the `grafana` stack on the cluster.
+
+1) Create a folder with the name of the addon:
+
+```bash
+mkdir -p examples/addons/grafana
+```
+
+2) Create all resources that are needed for the addon:
+
+```bash
+cat <<EOF> examples/addons/grafana/values.yaml
+# https://github.com/grafana/helm-charts/blob/main/charts/grafana/values.yaml
+ingress:
+  enabled: true
+  hosts:
+    - grafana.my-domain.local
+resources:
+  requests:
+    cpu: {{ .Properties.request_cpu | default "100m" }}
+    memory: {{ .Properties.request_memory | default "128Mi" }}
+  limits:
+    cpu: {{ .Properties.limit_cpu | default "100m" }}
+    memory: {{ .Properties.limit_memory | default "128Mi" }}
+EOF
+```
+
+3) Create the `manifest.yaml` file and include the values.yaml file:
+
+```bash
+cat <<EOF> examples/addons/grafana/manifest.yaml
+name: grafana
+properties:
+  request_cpu:
+    description: The CPU request for the grafana pod
+    type: string
+    required: false
+    default: 100m
+  request_memory:
+    description: The memory request for the grafana pod
+    type: string
+    required: false
+    default: 128Mi
+  limit_cpu:
+    description: The CPU limit for the grafana pod
+    type: string
+    required: true
+    default: 100m
+  limit_memory:
+    description: The memory limit for the grafana pod
+    type: string
+    required: true
+    default: 128Mi
+files:
+  - values.yaml
+EOF
+```
+
+4) Add the addon to the `PROJECT.yaml` file:
+
+The **group** is the name of the parent folder where the addon is located. In our case, the group is called ***cluster-configs***. During the *cluster* creation, this will result in the following folder structure for the addon configs: `<basePath>/<environment>/<stage>/<cluster>/cluster-configs/grafana`
+
+```bash
+user@pc % ogc
+✔ Add Addon
+Addon Name: grafana
+Should this addon be enabled by default? [Y/N]: y
+Please provide the path to the location of the addon (the directory must contain a manifest.yaml file): examples/addons/grafana
+Create new group: cluster-configs
+Are you sure you want to create the addon? [Y/N]: y
 ```

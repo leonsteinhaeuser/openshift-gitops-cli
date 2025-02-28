@@ -4,6 +4,7 @@ type CarrierCreateCluster struct {
 	Environment string
 	Stage       string
 	ClusterName string
+	Addons      map[string]map[string]any
 	Properties  map[string]string
 }
 

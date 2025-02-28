@@ -51,6 +51,11 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		return nil, err
 	}
 
+	addonConfig, err := manageAddons(writer, reader, config, envResult, stageResult, clusterName)
+	if err != nil {
+		return nil, err
+	}
+
 	// let's ask if the user want to add additional properties
 	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
 	if err != nil {
@@ -67,7 +72,7 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 
 	// ask for confirmation
 	fqnPath := path.Join(config.BasePath, envResult, stageResult, clusterName)
-	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new cluster in %s", fqnPath), false)
+	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new cluster in %s with addons: %v", fqnPath, utils.MapKeysToList(addonConfig)), false)
 	if err != nil {
 		return nil, err
 	}
@@ -79,6 +84,7 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		Environment: envResult,
 		Stage:       stageResult,
 		ClusterName: clusterName,
+		Addons:      addonConfig,
 		Properties:  utils.ReduceMap(properties, config.EnvStageProperty(envResult, stageResult)),
 	}, nil
 }
@@ -117,6 +123,11 @@ func UpdateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		return nil, err
 	}
 
+	addonConfig, err := manageAddons(writer, reader, config, envResult, stageResult, clusterResult)
+	if err != nil {
+		return nil, err
+	}
+
 	// let's ask if the user want to add additional properties
 	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to update properties?", false)
 	if err != nil {
@@ -135,6 +146,7 @@ func UpdateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		Environment: envResult,
 		Stage:       stageResult,
 		ClusterName: clusterResult,
+		Addons:      addonConfig,
 		Properties:  utils.ReduceMap(properties, config.EnvStageProperty(envResult, stageResult)),
 	}, nil
 }

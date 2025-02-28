@@ -3,13 +3,25 @@ package project
 import (
 	"io"
 
+	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/template"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
 )
 
 type ProjectConfig struct {
-	BasePath         string                 `json:"basePath"`
-	TemplateBasePath string                 `json:"templateBasePath"`
-	Environments     map[string]Environment `json:"environments"`
+	BasePath         string                               `json:"basePath"`
+	TemplateBasePath string                               `json:"templateBasePath"`
+	Addons           map[string]Addon                     `json:"addons"`
+	ParsedAddons     map[string]template.TemplateManifest `json:"-"`
+	Environments     map[string]Environment               `json:"environments"`
+}
+
+// AddonGroups returns a list of addon groups that have been defined in the addons
+func (p ProjectConfig) AddonGroups() []string {
+	groups := map[string]bool{}
+	for _, a := range p.Addons {
+		groups[a.Group] = true
+	}
+	return utils.MapKeysToList(groups)
 }
 
 type Environment struct {
@@ -27,8 +39,9 @@ type Stage struct {
 }
 
 type Cluster struct {
-	Name       string            `json:"-"`
-	Properties map[string]string `json:"properties"`
+	Name       string                    `json:"-"`
+	Addons     map[string]map[string]any `json:"addons"`
+	Properties map[string]string         `json:"properties"`
 }
 
 // EnvStageProperty merges the properties of the environment and stage and returns them as a map
@@ -81,4 +94,11 @@ type Command struct {
 // execute executes the command with the given arguments
 func (c Command) execute(stdout, errout io.Writer) error {
 	return utils.ExecuteShellCommand(stdout, errout, c.Command, c.Args...)
+}
+
+type Addon struct {
+	Name           string `json:"-"`
+	Group          string `json:"group"`
+	DefaultEnabled bool   `json:"defaultEnabled"`
+	Path           string `json:"path"`
 }

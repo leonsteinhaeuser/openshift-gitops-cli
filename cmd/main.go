@@ -34,6 +34,7 @@ var (
 
 			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
 				Properties: cprops,
+				Addons:     ccc.Addons,
 			}
 			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
 			if err != nil {
@@ -45,8 +46,38 @@ var (
 				return err
 			}
 
+			addons := map[string]template.AddonData{}
+			for k, v := range ccc.Addons {
+				addons[k] = template.AddonData{
+					Annotations: projectConfig.ParsedAddons[k].Annotations,
+					Properties:  v,
+				}
+			}
+
 			for _, t := range templates {
-				err = t.Render(projectConfig.BasePath, *ccc)
+				err = t.Render(projectConfig.BasePath, template.TemplateData{
+					Environment: ccc.Environment,
+					Stage:       ccc.Stage,
+					ClusterName: ccc.ClusterName,
+					Properties:  ccc.Properties,
+					Addons:      addons,
+				})
+				if err != nil {
+					return err
+				}
+			}
+
+			for _, v := range projectConfig.ParsedAddons {
+				atc, err := template.LoadTemplatesFromAddonManifest(v)
+				if err != nil {
+					return err
+				}
+				err = atc.Render(projectConfig.BasePath, template.AddonTemplateData{
+					Environment: ccc.Environment,
+					Stage:       ccc.Stage,
+					Cluster:     ccc.ClusterName,
+					Properties:  ccc.Addons[v.Name],
+				})
 				if err != nil {
 					return err
 				}
@@ -182,6 +213,18 @@ var (
 			}
 			return nil
 		},
+		"Add Addon": func() error {
+			err := menu.AddAddon(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
+			if err != nil {
+				return err
+			}
+
+			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
+			if err != nil {
+				return err
+			}
+			return nil
+		},
 	}
 
 	projectConfig = &project.ProjectConfig{}
@@ -222,6 +265,23 @@ func init() {
 		return
 	}
 	projectConfig = pc
+
+	if projectConfig.ParsedAddons == nil {
+		projectConfig.ParsedAddons = map[string]template.TemplateManifest{}
+	}
+
+	// load all addons, so we can use them later
+	for k, v := range projectConfig.Addons {
+		tm, err := template.LoadManifest(v.Path)
+		if err != nil {
+			fmt.Printf("An error occurred while loading the addon [%s] manifest file: %s, %v", k, v.Path, err)
+			return
+		}
+		tm.Name = k
+		tm.BasePath = v.Path
+		tm.Group = v.Group
+		projectConfig.ParsedAddons[k] = *tm
+	}
 }
 
 func main() {
