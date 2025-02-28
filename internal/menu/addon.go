@@ -44,6 +44,16 @@ func AddAddon(config *project.ProjectConfig, writer io.Writer, reader *bufio.Rea
 		return err
 	}
 
+	prompt := promptui.SelectWithAdd{
+		Label:    "Select Group",
+		Items:    config.AddonGroups(),
+		AddLabel: "Create new group",
+	}
+	_, groupName, err := prompt.Run()
+	if err != nil {
+		return err
+	}
+
 	// let's ask if the user want to add additional properties
 	confirmation, err := cli.BooleanQuestion(writer, reader, "Are you sure you want to create the addon?", false)
 	if err != nil {
@@ -60,6 +70,7 @@ func AddAddon(config *project.ProjectConfig, writer io.Writer, reader *bufio.Rea
 	config.Addons[addonName] = project.Addon{
 		DefaultEnabled: isEnabledByDefault,
 		Path:           sourcePath,
+		Group:          groupName,
 	}
 	return nil
 }

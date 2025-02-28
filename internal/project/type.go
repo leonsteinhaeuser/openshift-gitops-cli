@@ -15,6 +15,15 @@ type ProjectConfig struct {
 	Environments     map[string]Environment               `json:"environments"`
 }
 
+// AddonGroups returns a list of addon groups that have been defined in the addons
+func (p ProjectConfig) AddonGroups() []string {
+	groups := map[string]bool{}
+	for _, a := range p.Addons {
+		groups[a.Group] = true
+	}
+	return utils.MapKeysToList(groups)
+}
+
 type Environment struct {
 	Name       string            `json:"-"`
 	Properties map[string]string `json:"properties"`
