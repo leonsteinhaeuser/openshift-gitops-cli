@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_REPOSITORY: ghcr.io/leonsteinhaeuser/openshift-gitops-cluster-bootstrap-cli
+  IMAGE_REPOSITORY: ghcr.io/leonsteinhaeuser/openshift-gitops-cli
 
 jobs:
   release:
