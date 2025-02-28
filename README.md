@@ -25,31 +25,28 @@ After you have created the environment, stage, and cluster, the CLI will create 
 ```plaintext
 ├── PROJECT.yaml
 ├── examples
+│   ├── addons
+│   │   └── disco-operator
+│   │       ├── kustomization.yaml
+│   │       ├── manifest.yaml
+│   │       └── patch.yaml
 │   └── templates
-│       ├── appofapps
-│       │   ├── kustomization.yaml
-│       │   ├── manifest.yaml
-│       │   └── values.yaml
-│       └── cluster-config
-│           ├── manifest.yaml
-│           ├── kyverno
-│           │   └── kustomization.yaml
-│           └── other_test_with_patches
+│       └── appofapps
+│           └── database
 │               ├── kustomization.yaml
-│               └── patch.yaml
+│               ├── manifest.yaml
+│               └── values.yaml
 └── overlays
-    └── dev
-        └── testing
-            └── my-cluster
+    └── dev                                           # The environment
+        └── dev01                                     # The stage
+            └── test01                                # The cluster
                 ├── app-of-apps
                 │   ├── kustomization.yaml
                 │   └── values.yaml
-                └── cluster-config
-                    ├── kyverno
-                    │   └── kustomization.yaml
-                    └── other_test_with_patches
-                        ├── kustomization.yaml
-                        └── patch.yaml
+                └── cluster-configs                   # The addon group folder
+                    └── disco-operator                # The addon folder
+                        ├── kustomization.yaml        # The kustomization file
+                        └── patch.yaml                # The patch file (imported by the kustomization file)
 ```
 
 ## What is a cluster addon?
