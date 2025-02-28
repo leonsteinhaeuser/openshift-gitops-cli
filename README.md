@@ -49,6 +49,92 @@ After you have created the environment, stage, and cluster, the CLI will create 
                         └── patch.yaml                # The patch file (imported by the kustomization file)
 ```
 
+## What is an environment and stage?
+
+An environment in terms of infrastructure is a collection of resources that share the same hardware and network. For example, you can have infrastructure at `aws`, `gcp`, `azure` or even `on-prem`. Each of these environments can be named accordingly. For example, you can have an environment called `aws` which is hosted on `aws`, an environment called `gcp` which is hosted on `gcp`, and an environment called `azure` which is hosted on `azure`.
+
+A stage is a subset of an environment. For example, you can have a `aws` environment with multiple stages like `dev`, `staging`, and `production`, and a `gcp` environment with multiple stages like `dev`, `staging`, and `production`. Each stage can have its own set of resources that are used for different purposes. For example, the `dev` stage can be used for development with unrestricted access to resources, the `staging` stage can be used for testing production-like applications, and the `production` stage can be used for running production applications with restricted access to resources.
+
+## What is a cluster?
+
+A cluster is a set of resources that are used to run an application. For example, you can have a cluster that runs a web application, a database, and a cache. A second cluster can run a web application, a database, and a kafka cluster. Each cluster can have a baseline set of resources that are used to provision the cluster. For example, a policy engine, network policies, ingress controllers, monitoring, tracing, and logging or any other resources that are needed to run the application. We call this type of resources `addons`. Addons are pre-configured resources that can be applied to a cluster to extend its functionality. During the cluster creation, you can select which addons you want to apply to the cluster.
+
+### How to create a cluster?
+
+To create a cluster, execute the `ogc` binary and select the "Create Cluster" option. The CLI will ask you for the name of the `environment`, `stage`, and `cluster` name, followed by `addons` that you want to apply to the cluster and `properties` that you want to set for the cluster.
+
+### Example
+
+Let's say you want to create an OpenShift cluster with the following information:
+
+```bash
+Environment: dev
+Stage: dev
+Cluster name: my-cluster
+Addons: [kyverno, monitoring{ingress_host: monitoring.my-domain.local}]
+Properties: [gitURL: https://git.example.com/repo/name.git, gitBranch: main]
+```
+
+1) Create the environment:
+
+```bash
+user@pc % ogc
+✔ Create Environment
+Environment Name: dev
+Do you want to add properties? [Y/N]: y
+Create Property: gitURL
+Property Value: https://git.url/repo/name.git
+Do you want to add another property? [Y/N]: y
+Create Property: gitBranch
+Property Value: main
+Do you want to add another property? [Y/N]: n
+Are you sure to create a new environment in overlays/dev [Y/N]: y
+```
+
+2) Create the stage:
+
+```bash
+user@pc % ogc
+✔ Create Stage
+✔ dev
+Stage Name: dev
+Do you want to add properties? [Y/N]: y
+✔ gitBranch
+Property Value [main]: main
+Do you want to add or update another property? [Y/N]: y
+✔ gitURL
+Property Value [https://git.url/repo/name.git]: https://git.url/repo/name.git
+Do you want to add or update another property? [Y/N]: n
+Are you sure to create a new stage in overlays/dev/dev [Y/N]: y
+```
+
+3) Create the cluster:
+
+```bash
+user@pc % ogc
+✔ Create Cluster
+✔ dev
+✔ dev
+Cluster Name: my-cluster
+✔ kyverno
+✔ monitoring
+✔ Enable / Disable
+Do you really want to enable monitoring? [Y/N]: y
+✔ ingress_host
+Value []: monitoring.my-domain.local
+✔ Done
+Do you want to add properties? [Y/N]: y
+✔ gitURL
+Property Value [https://git.url/repo/name.git]: https://git.example.com/repo/name.git
+Do you want to add or update another property? [Y/N]: y
+✔ gitBranch
+Property Value [main]: main
+Do you want to add or update another property? [Y/N]: n
+Are you sure to create a new cluster in overlays/dev/dev/my-cluster with addons: [kyverno monitoring] [Y/N]: y
+```
+
+When you have created the environment, stage, and cluster, the CLI will create the corresponding entries in the `PROJECT.yaml` and directory structure.
+
 ## What is a cluster addon?
 
 A cluster addon is a set of resources that can be applied to an OpenShift cluster to extend its functionality. For example, you can create a cluster addon that installs a set of operators, CRDs, and other resources that are needed to run a specific application on the cluster. The cluster addon can be applied to the cluster using ArgoCD.
