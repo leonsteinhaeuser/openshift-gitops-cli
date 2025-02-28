@@ -67,6 +67,22 @@ var (
 				}
 			}
 
+			for _, v := range projectConfig.ParsedAddons {
+				atc, err := template.LoadTemplatesFromAddonManifest(v)
+				if err != nil {
+					return err
+				}
+				err = atc.Render(projectConfig.BasePath, template.AddonTemplateData{
+					Environment: ccc.Environment,
+					Stage:       ccc.Stage,
+					Cluster:     ccc.ClusterName,
+					Properties:  ccc.Addons[v.Name],
+				})
+				if err != nil {
+					return err
+				}
+			}
+
 			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePostCreateHooks(os.Stdout, os.Stderr)
 			if err != nil {
 				return fmt.Errorf("failed to execute post create hooks: %w", err)
@@ -263,6 +279,7 @@ func init() {
 		}
 		tm.Name = k
 		tm.BasePath = v.Path
+		tm.Group = v.Group
 		projectConfig.ParsedAddons[k] = *tm
 	}
 }

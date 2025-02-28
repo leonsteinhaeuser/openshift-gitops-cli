@@ -89,6 +89,7 @@ func (c Command) execute(stdout, errout io.Writer) error {
 
 type Addon struct {
 	Name           string `json:"-"`
+	Group          string `json:"group"`
 	DefaultEnabled bool   `json:"defaultEnabled"`
 	Path           string `json:"path"`
 }
