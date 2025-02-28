@@ -36,7 +36,11 @@ func BooleanQuestion(writer io.Writer, reader *bufio.Reader, label string, defau
 // StringQuestion asks a question that expects a string answer.
 // The question is printed to the writer, and the answer is read from the reader.
 func StringQuestion(writer io.Writer, reader *bufio.Reader, label string, defaultValue string, validations ...ValidationFunc) (string, error) {
-	fmt.Fprintf(writer, "%s [%s]: ", label, defaultValue)
+	if defaultValue == "" {
+		fmt.Fprintf(writer, "%s: ", label)
+	} else {
+		fmt.Fprintf(writer, "%s [%s]: ", label, defaultValue)
+	}
 	line, err := reader.ReadString('\n')
 	if err != nil {
 		return defaultValue, err
