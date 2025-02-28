@@ -137,11 +137,14 @@ EOF
 
 4) Add the addon to the `PROJECT.yaml` file:
 
+The **group** is the name of the parent folder where the addon is located. In our case, the group is called ***cluster-configs***. During the *cluster* creation, this will result in the following folder structure for the addon configs: `<basePath>/<environment>/<stage>/<cluster>/cluster-configs/grafana`
+
 ```bash
 user@pc % ogc
 ✔ Add Addon
-Addon Name []: grafana
+Addon Name: grafana
 Should this addon be enabled by default? [Y/N]: y
-Please provide the path to the location of the addon (the directory must contain a manifest.yaml file) []: examples/addons/grafana/
+Please provide the path to the location of the addon (the directory must contain a manifest.yaml file): examples/addons/grafana
+Create new group: cluster-configs
 Are you sure you want to create the addon? [Y/N]: y
 ```
