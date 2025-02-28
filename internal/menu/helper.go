@@ -68,6 +68,9 @@ func helperSelectTemplateAddonProperties(c project.Cluster, tmpl template.Templa
 		FuncMap: func() map[string]any {
 			funcmap := promptui.FuncMap
 			funcmap["properties"] = func(selectValue string) string {
+				if selectValue == cancelManageAddons || selectValue == enableDisableAddon {
+					return ""
+				}
 				resultString := "--------------------------------\nDetails:\n"
 				resultString += fmt.Sprintf("\tDescription: %s\n", tmpl.Properties[selectValue].Description)
 				resultString += fmt.Sprintf("\tRequired: %v\n", tmpl.Properties[selectValue].Required)
@@ -78,6 +81,39 @@ func helperSelectTemplateAddonProperties(c project.Cluster, tmpl template.Templa
 					data = tmpl.Properties[selectValue].Default
 				}
 				resultString += fmt.Sprintf("\tValue: %v\n", data)
+				return resultString
+			}
+			return funcmap
+		}(),
+	}
+}
+
+func helperManageAddons(config *project.ProjectConfig, clusterAddonConfig map[string]map[string]any) *promptui.SelectTemplates {
+	return &promptui.SelectTemplates{
+		Label:    "{{ . }}",
+		Active:   "",
+		Inactive: "",
+		Selected: "",
+		Details:  "{{ properties . }}",
+		FuncMap: func() map[string]any {
+			funcmap := promptui.FuncMap
+			funcmap["properties"] = func(selectValue string) string {
+				if selectValue == cancelManageAddons {
+					return ""
+				}
+
+				ca, isEnabled := clusterAddonConfig[selectValue]
+				if !isEnabled {
+					// was not found in the map, so we use the default value whether it is enabled or not
+					isEnabled = config.Addons[selectValue].DefaultEnabled
+				}
+
+				resultString := fmt.Sprintf("Name:\t%s\t\tEnabled: [%v]\n", selectValue, isEnabled)
+				resultString += "Properties:\n"
+				resultString += "\tName\t\tRequired\tDefault\tCurrent\tDescription\n"
+				for propKey, propVal := range config.ParsedAddons[selectValue].Properties {
+					resultString += fmt.Sprintf("\t%s\t\t%v\t%v\t%v\t%s\n", propKey, propVal.Required, propVal.Default, ca[propKey], propVal.Description)
+				}
 				return resultString
 			}
 			return funcmap

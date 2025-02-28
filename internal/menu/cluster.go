@@ -51,27 +51,9 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		return nil, err
 	}
 
-	addonConfig := map[string]map[string]any{}
-	for addonName, cfg := range config.ParsedAddons {
-		shouldAddonBeEnabled, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Do you want to enable %s?", addonName), config.Addons[addonName].DefaultEnabled)
-		if err != nil {
-			return nil, err
-		}
-		if !shouldAddonBeEnabled {
-			// addon should not be enabled
-			continue
-		}
-
-		// ask for addon properties
-		addonProperties, err := templateManifestPropertiesMenu(
-			writer,
-			reader,
-			config.Environments[envResult].Stages[stageResult].Clusters[clusterName],
-			cfg)
-		if err != nil {
-			return nil, err
-		}
-		addonConfig[addonName] = addonProperties
+	addonConfig, err := manageAddons(writer, reader, config, envResult, stageResult, clusterName)
+	if err != nil {
+		return nil, err
 	}
 
 	// let's ask if the user want to add additional properties
@@ -90,7 +72,7 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 
 	// ask for confirmation
 	fqnPath := path.Join(config.BasePath, envResult, stageResult, clusterName)
-	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new cluster in %s", fqnPath), false)
+	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new cluster in %s with addons: %v", fqnPath, utils.MapKeysToList(addonConfig)), false)
 	if err != nil {
 		return nil, err
 	}
@@ -141,27 +123,9 @@ func UpdateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		return nil, err
 	}
 
-	addonConfig := map[string]map[string]any{}
-	for addonName, cfg := range config.ParsedAddons {
-		shouldAddonBeEnabled, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Do you want to enable %s?", addonName), config.Addons[addonName].DefaultEnabled)
-		if err != nil {
-			return nil, err
-		}
-		if !shouldAddonBeEnabled {
-			// addon should not be enabled
-			continue
-		}
-
-		// ask for addon properties
-		addonProperties, err := templateManifestPropertiesMenu(
-			writer,
-			reader,
-			config.Environments[envResult].Stages[stageResult].Clusters[clusterResult],
-			cfg)
-		if err != nil {
-			return nil, err
-		}
-		addonConfig[addonName] = addonProperties
+	addonConfig, err := manageAddons(writer, reader, config, envResult, stageResult, clusterResult)
+	if err != nil {
+		return nil, err
 	}
 
 	// let's ask if the user want to add additional properties
