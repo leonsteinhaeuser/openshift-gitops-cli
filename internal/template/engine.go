@@ -36,7 +36,7 @@ type AddonData struct {
 
 // Render renders the template with the given carrier
 func (t Template) Render(basePath string, td TemplateData) error {
-	files, err := loadAsTemplate(t)
+	files, err := t.loadAsTemplate()
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (t Template) Render(basePath string, td TemplateData) error {
 }
 
 // loadAsTemplate loads the template files as a template
-func loadAsTemplate(t Template) ([]TemplateCarrier, error) {
+func (t Template) loadAsTemplate() ([]TemplateCarrier, error) {
 	files := []TemplateCarrier{}
 	for _, file := range t.TemplateManifest.Files {
 		fpath := path.Join(t.Path, file)
