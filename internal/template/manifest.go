@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"sigs.k8s.io/yaml"
@@ -62,27 +61,24 @@ const (
 // checkType validates the given value against the property type
 // If the value is valid, it will be returned, otherwise an error is returned
 func (p PropertyType) checkType(value any) (any, error) {
-	switch p {
-	case PropertyTypeString:
-		val, ok := value.(string)
-		if !ok {
-			return nil, fmt.Errorf("expected string, got %T", value)
+	switch v := value.(type) {
+	case string:
+		if p != PropertyTypeString {
+			return nil, fmt.Errorf("expected type %s, got string", p)
 		}
-		return val, nil
-	case PropertyTypeBool:
-		boolVal, err := strconv.ParseBool(value.(string))
-		if err != nil {
-			return nil, fmt.Errorf("expected bool, got %T", value)
+		return v, nil
+	case bool:
+		if p != PropertyTypeBool {
+			return nil, fmt.Errorf("expected type %s, got bool", p)
 		}
-		return boolVal, nil
-	case PropertyTypeInt:
-		intVal, err := strconv.ParseInt(value.(string), 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("expected int, got %T", value)
+		return v, nil
+	case int:
+		if p != PropertyTypeInt {
+			return nil, fmt.Errorf("expected type %s, got int", p)
 		}
-		return intVal, nil
+		return v, nil
 	default:
-		return nil, fmt.Errorf("unknown property type %s", p)
+		return nil, fmt.Errorf("unsupported type %T", v)
 	}
 }
 
