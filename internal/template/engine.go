@@ -77,7 +77,10 @@ func loadAsTemplate(t Template) ([]TemplateCarrier, error) {
 
 		// if a directory
 		// load all files in the directory
-		filepath.WalkDir(fpath, func(fpath string, d os.DirEntry, err error) error {
+		err = filepath.WalkDir(fpath, func(fpath string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
 			if d.IsDir() {
 				// we don't care about directories
 				return nil
@@ -94,6 +97,9 @@ func loadAsTemplate(t Template) ([]TemplateCarrier, error) {
 			files = append(files, tc)
 			return nil
 		})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return files, nil
 }
