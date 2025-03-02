@@ -1,6 +1,7 @@
 package project
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -79,6 +80,8 @@ func TestProjectConfig_AddonGroups(t *testing.T) {
 				Environments:     tt.fields.Environments,
 			}
 			got := p.AddonGroups()
+			slices.Sort(got)
+			slices.Sort(tt.want)
 			diff := cmp.Diff(got, tt.want)
 			if diff != "" {
 				t.Errorf("ProjectConfig.AddonGroups() mismatch (-got +want):\n%s", diff)
