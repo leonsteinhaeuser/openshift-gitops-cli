@@ -108,7 +108,8 @@ func (p Property) ParseValue(value any) (any, error) {
 // If the path is a directory, it will try to find the manifest file in it
 func LoadManifest(path string) (*TemplateManifest, error) {
 	// if user provides a directory, try to find the manifest file in it
-	if !strings.HasSuffix(path, "manifest.yaml") && !strings.HasSuffix(path, "manifest.yml") {
+	baseFileName := filepath.Base(path)
+	if baseFileName != "manifest.yaml" && baseFileName != "manifest.yml" {
 		path = filepath.Join(path, "manifest.yaml")
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			path = strings.TrimSuffix(path, "manifest.yaml") + "manifest.yml"
