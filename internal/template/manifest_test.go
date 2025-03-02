@@ -33,7 +33,7 @@ func TestPropertyType_checkType(t *testing.T) {
 			name: "bool",
 			p:    PropertyTypeBool,
 			args: args{
-				value: "true",
+				value: true,
 			},
 			want:    true,
 			wantErr: false,
@@ -42,9 +42,9 @@ func TestPropertyType_checkType(t *testing.T) {
 			name: "int",
 			p:    PropertyTypeInt,
 			args: args{
-				value: "42",
+				value: 42,
 			},
-			want:    int64(42),
+			want:    42,
 			wantErr: false,
 		},
 		{
