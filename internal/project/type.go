@@ -19,6 +19,9 @@ type ProjectConfig struct {
 func (p ProjectConfig) AddonGroups() []string {
 	groups := map[string]bool{}
 	for _, a := range p.Addons {
+		if a.Group == "" {
+			continue
+		}
 		groups[a.Group] = true
 	}
 	return utils.MapKeysToList(groups)

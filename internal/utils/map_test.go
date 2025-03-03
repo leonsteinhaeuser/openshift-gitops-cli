@@ -2,6 +2,7 @@ package utils
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 )
 
@@ -34,7 +35,11 @@ func TestMapKeysToList(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MapKeysToList(tt.args.m); !reflect.DeepEqual(got, tt.want) {
+			got := MapKeysToList(tt.args.m)
+			// we need to sort the slices because the order of the keys in the map is not guaranteed
+			slices.Sort(got)
+			slices.Sort(tt.want)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MapKeysToList() = %v, want %v", got, tt.want)
 			}
 		})
