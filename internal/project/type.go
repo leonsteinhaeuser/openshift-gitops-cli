@@ -1,18 +1,64 @@
 package project
 
 import (
-	"io"
-
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/template"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
 )
+
+type Environment struct {
+	Name       string            `json:"-"`
+	Properties map[string]string `json:"properties"`
+	Actions    Actions           `json:"actions"`
+	Stages     map[string]*Stage `json:"stages"`
+}
+
+type Stage struct {
+	Name       string              `json:"-"`
+	Properties map[string]string   `json:"properties"`
+	Actions    Actions             `json:"actions"`
+	Clusters   map[string]*Cluster `json:"clusters"`
+}
+
+type Addon struct {
+	Name           string `json:"-"`
+	Group          string `json:"group"`
+	DefaultEnabled bool   `json:"defaultEnabled"`
+	Path           string `json:"path"`
+}
 
 type ProjectConfig struct {
 	BasePath         string                               `json:"basePath"`
 	TemplateBasePath string                               `json:"templateBasePath"`
 	Addons           map[string]Addon                     `json:"addons"`
 	ParsedAddons     map[string]template.TemplateManifest `json:"-"`
-	Environments     map[string]Environment               `json:"environments"`
+	Environments     map[string]*Environment              `json:"environments"`
+}
+
+// HasCluster checks if a cluster exists in the given environment and stage
+func (p ProjectConfig) HasCluster(env, stage, cluster string) bool {
+	_, ok := p.Environments[env].Stages[stage].Clusters[cluster]
+	return ok
+}
+
+func (p ProjectConfig) Cluster(env, stage, cluster string) *Cluster {
+	return p.Environments[env].Stages[stage].Clusters[cluster]
+}
+
+// SetCluster sets the cluster for the given environment and stage
+func (p *ProjectConfig) SetCluster(env, stage string, cluster *Cluster) {
+	if p.Environments[env].Stages[stage].Clusters == nil {
+		p.Environments[env].Stages[stage].Clusters = map[string]*Cluster{}
+	}
+	p.Environments[env].Stages[stage].Clusters[cluster.Name] = cluster
+}
+
+func (p *ProjectConfig) DeleteCluster(env, stage, cluster string) {
+	delete(p.Environments[env].Stages[stage].Clusters, cluster)
+}
+
+// EnvStageProperty merges the properties of the environment and stage and returns them as a map
+func (pc *ProjectConfig) EnvStageProperty(environment, stage string) map[string]string {
+	return utils.MergeMaps(pc.Environments[environment].Properties, pc.Environments[environment].Stages[stage].Properties)
 }
 
 // AddonGroups returns a list of addon groups that have been defined in the addons
@@ -25,83 +71,4 @@ func (p ProjectConfig) AddonGroups() []string {
 		groups[a.Group] = true
 	}
 	return utils.MapKeysToList(groups)
-}
-
-type Environment struct {
-	Name       string            `json:"-"`
-	Properties map[string]string `json:"properties"`
-	Actions    Actions           `json:"actions"`
-	Stages     map[string]Stage  `json:"stages"`
-}
-
-type Stage struct {
-	Name       string             `json:"-"`
-	Properties map[string]string  `json:"properties"`
-	Actions    Actions            `json:"actions"`
-	Clusters   map[string]Cluster `json:"clusters"`
-}
-
-type Cluster struct {
-	Name       string                    `json:"-"`
-	Addons     map[string]map[string]any `json:"addons"`
-	Properties map[string]string         `json:"properties"`
-}
-
-// EnvStageProperty merges the properties of the environment and stage and returns them as a map
-func (pc *ProjectConfig) EnvStageProperty(environment, stage string) map[string]string {
-	return utils.MergeMaps(pc.Environments[environment].Properties, pc.Environments[environment].Stages[stage].Properties)
-}
-
-func (pc *ProjectConfig) EnvStageClusterProperty(environment, stage, cluster string) map[string]string {
-	return utils.MergeMaps(pc.EnvStageProperty(environment, stage), pc.Environments[environment].Stages[stage].Clusters[cluster].Properties)
-}
-
-type Actions struct {
-	PreCreateHooks  []Command `json:"preCreateHooks"`
-	PostCreateHooks []Command `json:"postCreateHooks"`
-	PreUpdateHooks  []Command `json:"preUpdateHooks"`
-	PostUpdateHooks []Command `json:"postUpdateHooks"`
-}
-
-func executeCommands(stdout, errout io.Writer, commands []Command) error {
-	for _, c := range commands {
-		err := c.execute(stdout, errout)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (a Actions) ExecutePreCreateHooks(stdout, errout io.Writer) error {
-	return executeCommands(stdout, errout, a.PreCreateHooks)
-}
-
-func (a Actions) ExecutePostCreateHooks(stdout, errout io.Writer) error {
-	return executeCommands(stdout, errout, a.PostCreateHooks)
-}
-
-func (a Actions) ExecutePreUpdateHooks(stdout, errout io.Writer) error {
-	return executeCommands(stdout, errout, a.PreUpdateHooks)
-}
-
-func (a Actions) ExecutePostUpdateHooks(stdout, errout io.Writer) error {
-	return executeCommands(stdout, errout, a.PostUpdateHooks)
-}
-
-type Command struct {
-	Command string   `json:"command"`
-	Args    []string `json:"args"`
-}
-
-// execute executes the command with the given arguments
-func (c Command) execute(stdout, errout io.Writer) error {
-	return utils.ExecuteShellCommand(stdout, errout, c.Command, c.Args...)
-}
-
-type Addon struct {
-	Name           string `json:"-"`
-	Group          string `json:"group"`
-	DefaultEnabled bool   `json:"defaultEnabled"`
-	Path           string `json:"path"`
 }
