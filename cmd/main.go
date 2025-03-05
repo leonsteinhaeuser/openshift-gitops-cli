@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/menu"
@@ -59,7 +60,8 @@ func init() {
 	for k, v := range projectConfig.Addons {
 		tm, err := template.LoadManifest(v.Path)
 		if err != nil {
-			fmt.Printf("An error occurred while loading the addon [%s] manifest file: %s, %v", k, v.Path, err)
+			fmt.Printf("An error occurred while loading the addon [%s] manifest file: %s, %v\n", k, v.Path, err)
+			os.Exit(1)
 			return
 		}
 		tm.Name = k
@@ -94,15 +96,32 @@ func main() {
 				}
 
 				if event.Environment != "" && event.Stage == "" && event.Cluster == "" {
-					// environment actio
+					env := projectConfig.Environments[event.Environment]
+					err := executeHook(os.Stdout, os.Stderr, event.Type, event.Runtime, env.Actions)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
 				}
 
 				if event.Environment != "" && event.Stage != "" && event.Cluster == "" {
-					// stage action
+					stage := projectConfig.Environments[event.Environment].Stages[event.Stage]
+					err := executeHook(os.Stdout, os.Stderr, event.Type, event.Runtime, stage.Actions)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
 				}
 
 				if event.Environment != "" && event.Stage != "" && event.Cluster != "" {
-					// cluster action
+					cluster := projectConfig.Cluster(event.Environment, event.Stage, event.Cluster)
+					if event.Type == menu.EventTypeCreate || event.Type == menu.EventTypeUpdate {
+						err := cluster.Render(projectConfig, event.Environment, event.Stage)
+						if err != nil {
+							fmt.Printf("An error occurred while rendering the cluster [%s] configuration: %v", event.Cluster, err)
+							return
+						}
+					}
 				}
 			}
 		}
@@ -113,4 +132,40 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func executeHook(stdout, errout io.Writer, t menu.EventType, r menu.EventRuntime, actions project.Actions) error {
+	switch t {
+	case menu.EventTypeCreate:
+		if r == menu.EventRuntimePre {
+			err := actions.ExecutePreCreateHooks(stdout, errout)
+			if err != nil {
+				return err
+			}
+		}
+		if r == menu.EventRuntimePost {
+			err := actions.ExecutePostCreateHooks(stdout, errout)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	case menu.EventTypeUpdate:
+		if r == menu.EventRuntimePre {
+			err := actions.ExecutePreUpdateHooks(stdout, errout)
+			if err != nil {
+				return err
+			}
+		}
+		if r == menu.EventRuntimePost {
+			err := actions.ExecutePostUpdateHooks(stdout, errout)
+			if err != nil {
+				return err
+			}
+		}
+	case menu.EventTypeDelete:
+	default:
+		return fmt.Errorf("unknown event type: %v", t)
+	}
+	return nil
 }

@@ -10,6 +10,11 @@ import (
 	"text/template"
 )
 
+const (
+	// include all files in the directory
+	includeAllInDirectory = "./"
+)
+
 type AddonTemplateCarrier struct {
 	Name  string
 	Group string
@@ -41,6 +46,11 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 
 		bPath := filepath.Base(fpath)
 		isFound := slices.IndexFunc(source.Files, func(indexEntry string) bool {
+			// FIXME: this is a hack, we need to find a better way to handle this
+			if indexEntry == includeAllInDirectory {
+				// include all files in the directory
+				return true
+			}
 			return indexEntry == bPath
 		})
 		if isFound == -1 {
