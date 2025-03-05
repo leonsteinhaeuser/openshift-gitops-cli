@@ -95,6 +95,10 @@ func main() {
 					}
 				}
 
+				if event.Origin == menu.EventOriginAddon {
+					continue
+				}
+
 				if event.Environment != "" && event.Stage == "" && event.Cluster == "" {
 					env := projectConfig.Environments[event.Environment]
 					err := executeHook(os.Stdout, os.Stderr, event.Type, event.Runtime, env.Actions)
