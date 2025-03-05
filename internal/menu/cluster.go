@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"path"
 
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
@@ -12,37 +11,19 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-// CreateCluster creates a context menu to create a new cluster
-// As part of this we ask for the environment, stage and cluster name
-func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*CarrierCreateCluster, error) {
-	// read environments
-	prompt := promptui.Select{
-		Label: "Select Environment",
-		Items: utils.MapKeysToList(config.Environments),
-	}
-	_, envResult, err := prompt.Run()
-	if err != nil {
-		return nil, err
-	}
+type clusterMenu struct {
+	writer io.Writer
+	reader *bufio.Reader
+	config *project.ProjectConfig
+}
 
-	// read stages
-	stages := config.Environments[envResult].Stages
-	prompt = promptui.Select{
-		Label: "Select Stage",
-		Items: utils.MapKeysToList(stages),
-	}
-	_, stageResult, err := prompt.Run()
-	if err != nil {
-		return nil, err
-	}
-
-	// ask for cluster name
-	clusterName, err := cli.StringQuestion(writer, reader, "Cluster Name", "", func(s string) error {
+// menuCreateCluster creates a context menu to create a new cluster
+func (c *clusterMenu) menuCreateCluster(env, stage string) (*project.Cluster, error) {
+	clusterName, err := cli.StringQuestion(c.writer, c.reader, "Cluster Name", "", func(s string) error {
 		if s == "" {
 			return fmt.Errorf("cluster name cannot be empty")
 		}
-
-		if _, ok := stages[stageResult].Clusters[s]; ok {
+		if c.config.HasCluster(env, stage, s) {
 			return fmt.Errorf("cluster already exists")
 		}
 		return nil
@@ -51,102 +32,115 @@ func CreateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufi
 		return nil, err
 	}
 
-	addonConfig, err := manageAddons(writer, reader, config, envResult, stageResult, clusterName)
+	cluster := &project.Cluster{
+		Name:       clusterName,
+		Addons:     map[string]*project.ClusterAddon{},
+		Properties: map[string]string{},
+	}
+
+	err = c.menuSettings(env, stage, cluster)
 	if err != nil {
 		return nil, err
 	}
 
-	// let's ask if the user want to add additional properties
-	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
-	if err != nil {
-		return nil, err
-	}
-	properties := map[string]string{}
-	if createProperties {
-		pts, err := askForProperties(config.EnvStageProperty(envResult, stageResult), writer, reader)
-		if err != nil {
-			return nil, err
+	return cluster, nil
+}
+
+// menuSettings creates a context menu to manage the settings of a cluster
+func (c *clusterMenu) menuSettings(env, stage string, cluster *project.Cluster) error {
+	for {
+		prompt := promptui.Select{
+			Label: "Settings",
+			Items: []string{"Addons", "Properties", "Done"},
 		}
-		properties = pts
-	}
+		_, result, err := prompt.Run()
+		if err != nil {
+			return err
+		}
 
-	// ask for confirmation
-	fqnPath := path.Join(config.BasePath, envResult, stageResult, clusterName)
-	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new cluster in %s with addons: %v", fqnPath, utils.MapKeysToList(addonConfig)), false)
+		switch result {
+		case "Addons":
+			addon := addonClusterMenu{
+				writer: c.writer,
+				reader: c.reader,
+				config: c.config,
+			}
+
+			err := addon.menuManageAddons(cluster)
+			if err != nil {
+				return err
+			}
+		case "Properties":
+			properties, err := c.menuClusterSettingsProperties(env, stage, cluster)
+			if err != nil {
+				return err
+			}
+			cluster.Properties = properties
+		case "Done":
+			return nil
+		default:
+			return fmt.Errorf("invalid option %s", result)
+		}
+	}
+}
+
+// menuUpdateCluster creates a context menu to update an existing cluster
+func (c *clusterMenu) menuUpdateCluster(envName, stageName, clusterName string) (*project.Cluster, error) {
+	cluster := c.config.Cluster(envName, stageName, clusterName)
+	if cluster.Name == "" {
+		cluster.Name = clusterName
+	}
+	err := c.menuSettings(envName, stageName, cluster)
+	if err != nil {
+		return nil, err
+	}
+	return cluster, nil
+}
+
+// menuDeleteCluster creates a context menu to delete an existing cluster
+func (c *clusterMenu) menuDeleteCluster(env, stage, cluster string) (*project.Cluster, error) {
+	confirmation, err := cli.BooleanQuestion(c.writer, c.reader, "Are you sure to delete the cluster?", false)
 	if err != nil {
 		return nil, err
 	}
 	if !confirmation {
 		return nil, fmt.Errorf("confirmation denied")
 	}
-
-	return &CarrierCreateCluster{
-		Environment: envResult,
-		Stage:       stageResult,
-		ClusterName: clusterName,
-		Addons:      addonConfig,
-		Properties:  utils.ReduceMap(properties, config.EnvStageProperty(envResult, stageResult)),
-	}, nil
+	return c.config.Cluster(env, stage, cluster), nil
 }
 
-// UpdateCluster creates a context menu to update an existing cluster
-// As part of this we ask for the environment, stage and cluster
-func UpdateCluster(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*CarrierCreateCluster, error) {
-	// read environments
-	prompt := promptui.Select{
-		Label: "Select Environment",
-		Items: utils.MapKeysToList(config.Environments),
-	}
-	_, envResult, err := prompt.Run()
-	if err != nil {
-		return nil, err
-	}
+func (c *clusterMenu) menuClusterSettingsProperties(env, stage string, cluster *project.Cluster) (map[string]string, error) {
+	clusterProperties := map[string]string{}
+	for {
+		properties := utils.MergeMaps(c.config.EnvStageProperty(env, stage), cluster.Properties, clusterProperties)
 
-	// read stages
-	prompt = promptui.Select{
-		Label: "Select Stage",
-		Items: utils.MapKeysToList(config.Environments[envResult].Stages),
-	}
-	_, stageResult, err := prompt.Run()
-	if err != nil {
-		return nil, err
-	}
-
-	// read clusters
-	prompt = promptui.Select{
-		Label:     "Select Cluster",
-		Items:     utils.MapKeysToList(config.Environments[envResult].Stages[stageResult].Clusters),
-		Templates: helperSelectTemplate(config, envResult, stageResult),
-	}
-	_, clusterResult, err := prompt.Run()
-	if err != nil {
-		return nil, err
-	}
-
-	addonConfig, err := manageAddons(writer, reader, config, envResult, stageResult, clusterResult)
-	if err != nil {
-		return nil, err
-	}
-
-	// let's ask if the user want to add additional properties
-	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to update properties?", false)
-	if err != nil {
-		return nil, err
-	}
-	properties := map[string]string{}
-	if createProperties {
-		pts, err := askForProperties(config.EnvStageClusterProperty(envResult, stageResult, clusterResult), writer, reader)
+		prompt := promptui.SelectWithAdd{
+			Label:    "Properties",
+			Items:    append(utils.MapKeysToList(properties), "Done"),
+			AddLabel: "Create Property",
+		}
+		_, result, err := prompt.Run()
 		if err != nil {
 			return nil, err
 		}
-		properties = pts
-	}
+		if result == "" {
+			return nil, fmt.Errorf("property key cannot be empty")
+		}
+		if result == "Done" {
+			// user is done
+			break
+		}
 
-	return &CarrierCreateCluster{
-		Environment: envResult,
-		Stage:       stageResult,
-		ClusterName: clusterResult,
-		Addons:      addonConfig,
-		Properties:  utils.ReduceMap(properties, config.EnvStageProperty(envResult, stageResult)),
-	}, nil
+		val, err := cli.StringQuestion(c.writer, c.reader, "Property Value", properties[result], func(s string) error {
+			if s == "" {
+				return fmt.Errorf("property value cannot be empty")
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		clusterProperties[result] = val
+	}
+	return clusterProperties, nil
 }

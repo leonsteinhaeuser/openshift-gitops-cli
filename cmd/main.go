@@ -1,232 +1,17 @@
 package main
 
 import (
-	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"os"
-	"slices"
 
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/menu"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/template"
-	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
-	"github.com/manifoldco/promptui"
 )
 
 var (
-	actionMap = map[string]func() error{
-		"Create Cluster": func() error {
-			ccc, err := menu.CreateCluster(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
-			if err != nil {
-				return err
-			}
-
-			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePreCreateHooks(os.Stdout, os.Stderr)
-			if err != nil {
-				return fmt.Errorf("failed to execute pre create hooks: %w", err)
-			}
-
-			cprops := ccc.Properties
-			// merge properties from environment and stage
-			props := utils.MergeMaps(projectConfig.Environments[ccc.Environment].Properties, projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Properties, ccc.Properties)
-			ccc.Properties = props
-
-			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
-				Properties: cprops,
-				Addons:     ccc.Addons,
-			}
-			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
-			if err != nil {
-				return err
-			}
-
-			templates, err := template.LoadTemplateManifest(projectConfig.TemplateBasePath)
-			if err != nil {
-				return err
-			}
-
-			addons := map[string]template.AddonData{}
-			for k, v := range ccc.Addons {
-				addons[k] = template.AddonData{
-					Annotations: projectConfig.ParsedAddons[k].Annotations,
-					Properties:  v,
-				}
-			}
-
-			for _, t := range templates {
-				err = t.Render(projectConfig.BasePath, template.TemplateData{
-					Environment: ccc.Environment,
-					Stage:       ccc.Stage,
-					ClusterName: ccc.ClusterName,
-					Properties:  ccc.Properties,
-					Addons:      addons,
-				})
-				if err != nil {
-					return err
-				}
-			}
-
-			for _, v := range projectConfig.ParsedAddons {
-				atc, err := template.LoadTemplatesFromAddonManifest(v)
-				if err != nil {
-					return err
-				}
-				err = atc.Render(projectConfig.BasePath, template.AddonTemplateData{
-					Environment: ccc.Environment,
-					Stage:       ccc.Stage,
-					Cluster:     ccc.ClusterName,
-					Properties:  ccc.Addons[v.Name],
-				})
-				if err != nil {
-					return err
-				}
-			}
-
-			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePostCreateHooks(os.Stdout, os.Stderr)
-			if err != nil {
-				return fmt.Errorf("failed to execute post create hooks: %w", err)
-			}
-			return nil
-		},
-		"Update Cluster": func() error {
-			ccc, err := menu.UpdateCluster(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
-			if err != nil {
-				return err
-			}
-
-			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePreUpdateHooks(os.Stdout, os.Stderr)
-			if err != nil {
-				return fmt.Errorf("failed to execute pre update hooks: %w", err)
-			}
-
-			cprops := ccc.Properties
-			// merge properties from environment and stage
-			props := utils.MergeMaps(projectConfig.Environments[ccc.Environment].Properties, projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Properties, ccc.Properties)
-			ccc.Properties = props
-
-			projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Clusters[ccc.ClusterName] = project.Cluster{
-				Properties: cprops,
-			}
-			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
-			if err != nil {
-				return err
-			}
-
-			err = projectConfig.Environments[ccc.Environment].Stages[ccc.Stage].Actions.ExecutePostUpdateHooks(os.Stdout, os.Stderr)
-			if err != nil {
-				return fmt.Errorf("failed to execute post update hooks: %w", err)
-			}
-
-			// TODO: we might need to update the templates
-			return nil
-		},
-		"Create Environment": func() error {
-			env, err := menu.CreateEnvironment(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
-			if err != nil {
-				return err
-			}
-
-			if projectConfig.Environments == nil {
-				projectConfig.Environments = map[string]project.Environment{}
-			}
-
-			projectConfig.Environments[env.EnvironmentName] = project.Environment{
-				Properties: env.Properties,
-				Stages:     map[string]project.Stage{},
-			}
-			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-		"Update Environment": func() error {
-			env, err := menu.UpdateEnvironment(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
-			if err != nil {
-				return err
-			}
-
-			envC := projectConfig.Environments[env.EnvironmentName]
-			envC.Properties = env.Properties
-			projectConfig.Environments[env.EnvironmentName] = envC
-			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-		"Create Stage": func() error {
-			cc, err := menu.CreateStage(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
-			if err != nil {
-				return err
-			}
-
-			err = projectConfig.Environments[cc.Environment].Actions.ExecutePreCreateHooks(os.Stdout, os.Stderr)
-			if err != nil {
-				return fmt.Errorf("failed to execute pre create hooks: %w", err)
-			}
-
-			if projectConfig.Environments[cc.Environment].Stages == nil {
-				projectConfig.Environments[cc.Environment] = project.Environment{
-					Stages: map[string]project.Stage{},
-				}
-			}
-
-			envC := projectConfig.Environments[cc.Environment].Stages[cc.StageName]
-			envC.Properties = cc.Properties
-			projectConfig.Environments[cc.Environment].Stages[cc.StageName] = envC
-			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
-			if err != nil {
-				return err
-			}
-
-			err = projectConfig.Environments[cc.Environment].Actions.ExecutePostCreateHooks(os.Stdout, os.Stderr)
-			if err != nil {
-				return fmt.Errorf("failed to execute post create hooks: %w", err)
-			}
-			return nil
-		},
-		"Update Stage": func() error {
-			cc, err := menu.UpdateStage(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
-			if err != nil {
-				return err
-			}
-
-			err = projectConfig.Environments[cc.Environment].Actions.ExecutePreUpdateHooks(os.Stdout, os.Stderr)
-			if err != nil {
-				return fmt.Errorf("failed to execute pre update hooks: %w", err)
-			}
-
-			projectConfig.Environments[cc.Environment].Stages[cc.StageName] = project.Stage{
-				Properties: cc.Properties,
-				Clusters:   map[string]project.Cluster{},
-			}
-			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
-			if err != nil {
-				return err
-			}
-
-			err = projectConfig.Environments[cc.Environment].Actions.ExecutePostUpdateHooks(os.Stdout, os.Stderr)
-			if err != nil {
-				return fmt.Errorf("failed to execute post update hooks: %w", err)
-			}
-			return nil
-		},
-		"Add Addon": func() error {
-			err := menu.AddAddon(projectConfig, os.Stdout, bufio.NewReader(os.Stdin))
-			if err != nil {
-				return err
-			}
-
-			err = project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
-			if err != nil {
-				return err
-			}
-			return nil
-		},
-	}
-
 	projectConfig = &project.ProjectConfig{}
 )
 
@@ -285,24 +70,47 @@ func init() {
 }
 
 func main() {
-	s := utils.MapKeysToList(actionMap)
-	slices.Sort(s)
+	eventsPipeline := make(chan menu.Event, 100)
+	ctx, cf := context.WithCancel(context.Background())
+	defer cf()
 
-	prompt := promptui.Select{
-		Label: "Select Action",
-		Items: s,
-	}
+	go func(ctx context.Context) {
+		// handle config file updates
+		for {
+			select {
+			case <-ctx.Done():
+				close(eventsPipeline)
+				return
+			case event := <-eventsPipeline:
+				// we only need to update the config file if the action is a post action
+				// because we need to update the config only, if the action was successful
+				if event.Runtime == menu.EventRuntimePost {
+					// update config file
+					err := project.UpdateOrCreateConfig(PROJECTFILENAME, projectConfig)
+					if err != nil {
+						fmt.Println("An error occurred while updating the project config", err)
+						return
+					}
+				}
 
-	_, result, err := prompt.Run()
+				if event.Environment != "" && event.Stage == "" && event.Cluster == "" {
+					// environment actio
+				}
 
+				if event.Environment != "" && event.Stage != "" && event.Cluster == "" {
+					// stage action
+				}
+
+				if event.Environment != "" && event.Stage != "" && event.Cluster != "" {
+					// cluster action
+				}
+			}
+		}
+	}(ctx)
+
+	err := menu.RootMenu(projectConfig, eventsPipeline)
 	if err != nil {
-		fmt.Printf("Prompt failed %v\n", err)
-		return
-	}
-
-	err = actionMap[result]()
-	if err != nil {
-		fmt.Printf("Action failed %v\n", err)
-		return
+		fmt.Println(err)
+		os.Exit(1)
 	}
 }

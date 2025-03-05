@@ -2,9 +2,9 @@ package menu
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
-	"path"
 
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
@@ -12,14 +12,18 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-// CreateEnvironment creates a context menu to create a new environment
-// As part of this we ask for the environment name
-func CreateEnvironment(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*CarrierCreateEnvironment, error) {
-	environmentName, err := cli.StringQuestion(writer, reader, "Environment Name", "", func(s string) error {
+type environmentMenu struct {
+	writer io.Writer
+	reader *bufio.Reader
+	config *project.ProjectConfig
+}
+
+func (e *environmentMenu) menuCreateEnvironment() (*project.Environment, error) {
+	env, err := cli.StringQuestion(e.writer, e.reader, "Environment Name", "", func(s string) error {
 		if s == "" {
 			return fmt.Errorf("environment name cannot be empty")
 		}
-		if _, ok := config.Environments[s]; ok {
+		if _, ok := e.config.Environments[s]; ok {
 			return fmt.Errorf("environment already exists")
 		}
 		return nil
@@ -28,66 +32,79 @@ func CreateEnvironment(config *project.ProjectConfig, writer io.Writer, reader *
 		return nil, err
 	}
 
-	// let's ask if the user want to add additional properties
-	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
+	environment := &project.Environment{
+		Name:       env,
+		Stages:     map[string]*project.Stage{},
+		Properties: map[string]string{},
+	}
+
+	// ask for properties
+	properties, err := e.menuEnvironmentProperties(environment)
 	if err != nil {
 		return nil, err
 	}
-	properties := map[string]string{}
-	if createProperties {
-		pts, err := askForProperties(map[string]string{}, writer, reader)
-		if err != nil {
-			return nil, err
-		}
-		properties = pts
-	}
+	environment.Properties = properties
 
-	// ask for confirmation
-	fqnPath := path.Join(config.BasePath, environmentName)
-	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new environment in %s", fqnPath), false)
+	return environment, nil
+}
+
+func (e *environmentMenu) menuUpdateEnvironment(envName string) (*project.Environment, error) {
+	environment := *e.config.Environments[envName]
+	environment.Name = envName
+	// ask for properties
+	properties, err := e.menuEnvironmentProperties(&environment)
+	if err != nil {
+		return nil, err
+	}
+	environment.Properties = properties
+	return &environment, nil
+}
+
+func (e *environmentMenu) menuDeleteEnvironment(envName string) (*project.Environment, error) {
+	confirmation, err := cli.BooleanQuestion(e.writer, e.reader, fmt.Sprintf("Are you sure to delete the environment %s. Keep in mind that this will also delete the stages and clusters.", envName), false)
 	if err != nil {
 		return nil, err
 	}
 	if !confirmation {
 		return nil, fmt.Errorf("confirmation denied")
 	}
-
-	return &CarrierCreateEnvironment{
-		EnvironmentName: environmentName,
-		Properties:      properties,
-	}, nil
+	environment := *e.config.Environments[envName]
+	environment.Name = envName
+	return &environment, errors.New("menuDeleteEnvironment not implemented")
 }
 
-// UpdateEnvironment creates a context menu to update an existing environment
-// As part of this we ask for the environment name
-func UpdateEnvironment(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*CarrierCreateEnvironment, error) {
-	// read environment
-	prompt := promptui.Select{
-		Label:     "Select Cluster",
-		Items:     utils.MapKeysToList(config.Environments),
-		Templates: helperSelectTemplate(config, "", ""),
-	}
-	_, envName, err := prompt.Run()
-	if err != nil {
-		return nil, err
-	}
+func (e *environmentMenu) menuEnvironmentProperties(env *project.Environment) (map[string]string, error) {
+	envProperties := map[string]string{}
+	for {
+		properties := utils.MergeMaps(env.Properties, envProperties)
 
-	// let's ask if the user want to add additional properties
-	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to update properties?", false)
-	if err != nil {
-		return nil, err
-	}
-	properties := map[string]string{}
-	if createProperties {
-		pts, err := askForProperties(config.Environments[envName].Properties, writer, reader)
+		prompt := promptui.SelectWithAdd{
+			Label:    "Properties",
+			Items:    append(utils.MapKeysToList(properties), "Done"),
+			AddLabel: "Create Property",
+		}
+		_, result, err := prompt.Run()
 		if err != nil {
 			return nil, err
 		}
-		properties = pts
-	}
+		if result == "" {
+			return nil, fmt.Errorf("property key cannot be empty")
+		}
+		if result == "Done" {
+			// user is done
+			break
+		}
 
-	return &CarrierCreateEnvironment{
-		EnvironmentName: envName,
-		Properties:      properties,
-	}, nil
+		val, err := cli.StringQuestion(e.writer, e.reader, "Property Value", properties[result], func(s string) error {
+			if s == "" {
+				return fmt.Errorf("property value cannot be empty")
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		envProperties[result] = val
+	}
+	return envProperties, nil
 }
