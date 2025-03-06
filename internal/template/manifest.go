@@ -10,30 +10,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-/*
-// Directory structure
-
-- manifest.yaml     # contains the lookup parameters for the template
-- values.yaml       # contains actual template related values
-- files/abc.txt     # contains actual template related values
-- files/def.txt     # contains actual template related values
-- files/ghi.yaml    # contains actual template related value
-
-// In config
-
-name: "my-template"
-properties:
-  globalServerSideApply:
-    required: false
-	default: false
-	description: "Whether to use server-side apply for all resources"
-files:
-  - values.yaml
-  - files/abc.txt
-  - files/def.txt
-  - files/ghi.yaml
-*/
-
 type TemplateManifest struct {
 	BasePath string `json:"-"`
 	Name     string `json:"name"`
@@ -128,6 +104,7 @@ func LoadManifest(path string) (*TemplateManifest, error) {
 	if err != nil {
 		return nil, err
 	}
+	t.BasePath = t.Name
 	return t, nil
 }
 

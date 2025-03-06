@@ -108,8 +108,6 @@ func RootMenu(config *project.ProjectConfig, eventCh chan<- Event) error {
 					return err
 				}
 
-				// FIXME: pre and post hooks are missing
-
 				eventCh <- newPreCreateEvent(EventOriginStage, *envName, stage.Name, "")
 				// add stage to config
 				config.Environments[*envName].Stages[stage.Name] = stage

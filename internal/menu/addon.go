@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/k0kubun/pp/v3"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
@@ -73,9 +72,6 @@ func (a *addonClusterMenu) menuAddonSettings(cluster *project.Cluster, addon str
 		default:
 			return fmt.Errorf("invalid option %s", result)
 		}
-
-		// FIXME: remove debug output
-		pp.Println(cluster)
 	}
 }
 
