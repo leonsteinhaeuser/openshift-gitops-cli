@@ -52,6 +52,14 @@ func init() {
 	}
 	projectConfig = pc
 
+	if projectConfig.Environments == nil {
+		projectConfig.Environments = map[string]*project.Environment{}
+	}
+
+	if projectConfig.Addons == nil {
+		projectConfig.Addons = map[string]project.Addon{}
+	}
+
 	if projectConfig.ParsedAddons == nil {
 		projectConfig.ParsedAddons = map[string]template.TemplateManifest{}
 	}
