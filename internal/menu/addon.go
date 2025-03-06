@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
@@ -19,9 +20,11 @@ type addonClusterMenu struct {
 
 func (a *addonClusterMenu) menuManageAddons(cluster *project.Cluster) error {
 	for {
+		addons := utils.MapKeysToList(a.config.ParsedAddons)
+		slices.Sort(addons)
 		prompt := promptui.Select{
 			Label: "Manage Addons",
-			Items: append(utils.MapKeysToList(a.config.ParsedAddons), "Done"),
+			Items: append(addons, "Done"),
 		}
 		_, result, err := prompt.Run()
 		if err != nil {
