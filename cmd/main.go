@@ -104,6 +104,15 @@ func main() {
 				}
 
 				if event.Origin == menu.EventOriginAddon {
+					if event.Runtime == menu.EventRuntimePre {
+						addonPath := projectConfig.Addons[event.Environment].Path
+						_, err := template.LoadManifest(projectConfig.Addons[event.Environment].Path)
+						if err != nil {
+							fmt.Printf("An error occurred while loading the addon [%s] manifest file: %s, %v\n", event.Environment, addonPath, err)
+							os.Exit(1)
+							return
+						}
+					}
 					continue
 				}
 
