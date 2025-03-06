@@ -12,6 +12,20 @@ type ClusterAddon struct {
 	Properties map[string]any `json:"properties"`
 }
 
+// AllRequiredPropertiesSet checks if all required properties are set for the addon
+func (ca *ClusterAddon) AllRequiredPropertiesSet(config *ProjectConfig, addonName string) error {
+	for key, property := range config.ParsedAddons[addonName].Properties {
+		if property.Required && ca.Properties[key] == nil {
+			return fmt.Errorf("property for key %s is required", key)
+		}
+		_, err := config.ParsedAddons[addonName].Properties[key].ParseValue(ca.Properties[key])
+		if err != nil {
+			return fmt.Errorf("property for key %s is invalid: %w", key, err)
+		}
+	}
+	return nil
+}
+
 type Cluster struct {
 	Name       string                   `json:"-"`
 	Addons     map[string]*ClusterAddon `json:"addons"`
@@ -97,6 +111,20 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 		})
 		if err != nil {
 			return fmt.Errorf("failed to render addon: %s, Error: %w", addonName, err)
+		}
+	}
+	return nil
+}
+
+func (c *Cluster) AllRequiredPropertiesSet(config *ProjectConfig) error {
+	for addonName, addon := range c.Addons {
+		if !addon.Enabled {
+			// skip disabled addons
+			continue
+		}
+		err := addon.AllRequiredPropertiesSet(config, addonName)
+		if err != nil {
+			return fmt.Errorf("failed to validate properties for addon %s: %w", addonName, err)
 		}
 	}
 	return nil

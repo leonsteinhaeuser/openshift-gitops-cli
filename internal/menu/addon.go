@@ -33,6 +33,11 @@ func (a *addonClusterMenu) menuManageAddons(cluster *project.Cluster) error {
 			return err
 		}
 		if result == "Done" {
+			err := cluster.AllRequiredPropertiesSet(a.config)
+			if err != nil {
+				fmt.Println("Not all required properties are set", err)
+				continue
+			}
 			break
 		}
 
@@ -94,6 +99,16 @@ func (a *addonClusterMenu) menuAddonSettings(cluster *project.Cluster, addon str
 				return err
 			}
 		case "Done":
+			if !(*cluster).IsAddonEnabled(addon) {
+				return nil
+			}
+
+			// check if all required properties are set
+			err := cluster.Addons[addon].AllRequiredPropertiesSet(a.config, addon)
+			if err != nil {
+				fmt.Println("Not all required properties are set", err)
+				continue
+			}
 			return nil
 		default:
 			return fmt.Errorf("invalid option %s", result)
@@ -129,6 +144,12 @@ func (a *addonClusterMenu) menuAddonProperties(cluster *project.Cluster, addon s
 		}
 		if cluster.Addons[addon].Properties == nil {
 			cluster.Addons[addon].Properties = map[string]any{}
+		}
+
+		value, err = a.config.ParsedAddons[addon].Properties[result].ParseValue(value)
+		if err != nil {
+			fmt.Println("Value violates requirements, please try again", err)
+			continue
 		}
 		cluster.Addons[addon].Properties[result] = value
 	}
