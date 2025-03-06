@@ -23,8 +23,10 @@ func (a *addonClusterMenu) menuManageAddons(cluster *project.Cluster) error {
 		addons := utils.MapKeysToList(a.config.ParsedAddons)
 		slices.Sort(addons)
 		prompt := promptui.Select{
-			Label: "Manage Addons",
-			Items: append(addons, "Done"),
+			Label:     "Manage Addons",
+			Items:     append(addons, "Done"),
+			Templates: a.templateManageAddons(cluster),
+			Size:      10,
 		}
 		_, result, err := prompt.Run()
 		if err != nil {
@@ -40,6 +42,27 @@ func (a *addonClusterMenu) menuManageAddons(cluster *project.Cluster) error {
 		}
 	}
 	return nil
+}
+
+func (a *addonClusterMenu) templateManageAddons(cluster *project.Cluster) *promptui.SelectTemplates {
+	return &promptui.SelectTemplates{
+		Label:   "{{ . }}",
+		Details: "{{ addon . }}",
+		FuncMap: func() map[string]any {
+			funcmap := promptui.FuncMap
+			funcmap["addon"] = func(addonName string) string {
+				if addonName == "Done" {
+					return ""
+				}
+				resultString := "--------------------------------\nDetails:\n"
+				resultString += fmt.Sprintf("\tDescription: %s\n", a.config.ParsedAddons[addonName].Description)
+				resultString += fmt.Sprintf("\tGroup: %s\n", a.config.ParsedAddons[addonName].Group)
+				resultString += fmt.Sprintf("\tEnabled: %v | Default: %v\n", cluster.IsAddonEnabled(addonName), a.config.Addons[addonName].DefaultEnabled)
+				return resultString
+			}
+			return funcmap
+		}(),
+	}
 }
 
 func (a *addonClusterMenu) menuAddonSettings(cluster *project.Cluster, addon string) error {

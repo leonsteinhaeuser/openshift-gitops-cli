@@ -11,9 +11,10 @@ import (
 )
 
 type TemplateManifest struct {
-	BasePath string `json:"-"`
-	Name     string `json:"name"`
-	Group    string `json:"group"`
+	BasePath    string `json:"-"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Group       string `json:"group"`
 	// Properties is a map of properties that can be set when rendering the template
 	// The key is the name of the property, the value is the property definition
 	// In the manifest file, the properties can be defined to be required or have a default value
