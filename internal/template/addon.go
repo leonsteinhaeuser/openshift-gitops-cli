@@ -28,12 +28,14 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 		Group: source.Group,
 		Files: map[string]*template.Template{},
 	}
+	fsubDir := ""
 	err := filepath.WalkDir(source.BasePath, func(fpath string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if d.IsDir() {
+			fsubDir = strings.TrimPrefix(strings.TrimPrefix(fpath, source.BasePath), string(os.PathSeparator))
 			// skip directories
 			return nil
 		}
@@ -63,7 +65,7 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 			return err
 		}
 
-		template.Files[bPath] = tmpl
+		template.Files[path.Join(fsubDir, bPath)] = tmpl
 		return nil
 	})
 	if err != nil {
@@ -90,6 +92,15 @@ func (a AddonTemplateCarrier) Render(basePath string, properties AddonTemplateDa
 		return err
 	}
 	for fileName, template := range a.Files {
+		baseFileName := filepath.Base(fileName)
+		if len(fileName) > len(baseFileName) {
+			// create the directory structure
+			err := os.MkdirAll(path.Join(originPath, strings.TrimSuffix(fileName, baseFileName)), 0775)
+			if err != nil {
+				return err
+			}
+		}
+
 		// create the file and render the template
 		file, err := os.OpenFile(path.Join(originPath, fileName), os.O_CREATE|os.O_WRONLY, 0664)
 		if err != nil {
