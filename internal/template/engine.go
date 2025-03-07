@@ -110,7 +110,8 @@ func parseFile(fpath string) (*template.Template, error) {
 		return nil, err
 	}
 	// parse the template
-	tpl, err := template.New("template").Funcs(funcMap()).Parse(string(bts))
+	tmpl := template.New("root")
+	tpl, err := tmpl.Funcs(funcMap(tmpl)).Parse(string(bts))
 	if err != nil {
 		return nil, err
 	}
