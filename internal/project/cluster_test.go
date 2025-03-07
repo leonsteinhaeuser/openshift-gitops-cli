@@ -711,3 +711,276 @@ func TestCluster_DisableAddon(t *testing.T) {
 		})
 	}
 }
+
+func TestCluster_AllRequiredPropertiesSet(t *testing.T) {
+	type fields struct {
+		Name       string
+		Addons     map[string]*ClusterAddon
+		Properties map[string]string
+	}
+	type args struct {
+		config *ProjectConfig
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "one addon, no properties in cluster",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled:    true,
+						Properties: map[string]any{},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							BasePath:    "examples/addons/addon1",
+							Name:        "addon1",
+							Description: "addon1",
+							Group:       "group1",
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeBool,
+									Description: "property1",
+								},
+							},
+							Annotations: map[string]string{},
+							Files:       []string{},
+						},
+					},
+					Addons: map[string]Addon{
+						"addon1": {
+							Name:           "addon1",
+							Group:          "group1",
+							DefaultEnabled: true,
+							Path:           "examples/addons/addon1",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "one addon, with properties in cluster but wrong type",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+						Properties: map[string]any{
+							"property1": "invalid",
+						},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							BasePath:    "examples/addons/addon1",
+							Name:        "addon1",
+							Description: "addon1",
+							Group:       "group1",
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeBool,
+									Description: "property1",
+								},
+							},
+							Annotations: map[string]string{},
+							Files:       []string{},
+						},
+					},
+					Addons: map[string]Addon{
+						"addon1": {
+							Name:           "addon1",
+							Group:          "group1",
+							DefaultEnabled: true,
+							Path:           "examples/addons/addon1",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "one addon disabled, with properties in cluster but wrong type",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: false,
+						Properties: map[string]any{
+							"property1": "invalid",
+						},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							BasePath:    "examples/addons/addon1",
+							Name:        "addon1",
+							Description: "addon1",
+							Group:       "group1",
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeBool,
+									Description: "property1",
+								},
+							},
+							Annotations: map[string]string{},
+							Files:       []string{},
+						},
+					},
+					Addons: map[string]Addon{
+						"addon1": {
+							Name:           "addon1",
+							Group:          "group1",
+							DefaultEnabled: true,
+							Path:           "examples/addons/addon1",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "one addon, with properties in cluster",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+						Properties: map[string]any{
+							"property1": true,
+						},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							BasePath:    "examples/addons/addon1",
+							Name:        "addon1",
+							Description: "addon1",
+							Group:       "group1",
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeBool,
+									Description: "property1",
+								},
+							},
+							Annotations: map[string]string{},
+							Files:       []string{},
+						},
+					},
+					Addons: map[string]Addon{
+						"addon1": {
+							Name:           "addon1",
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "two addons, with properties in cluster",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+						Properties: map[string]any{
+							"property1": true,
+						},
+					},
+					"addon2": {
+						Enabled: true,
+						Properties: map[string]any{
+							"property1": true,
+						},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							BasePath:    "examples/addons/addon1",
+							Name:        "addon1",
+							Description: "addon1",
+							Group:       "group1",
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeBool,
+									Description: "property1",
+								},
+							},
+							Annotations: map[string]string{},
+							Files:       []string{},
+						},
+						"addon2": {
+							BasePath:    "examples/addons/addon2",
+							Name:        "addon2",
+							Description: "addon2",
+							Group:       "group2",
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeBool,
+									Description: "property1",
+								},
+							},
+							Annotations: map[string]string{},
+							Files:       []string{},
+						},
+					},
+					Addons: map[string]Addon{
+						"addon1": {
+							Name:           "addon1",
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+						"addon2": {
+							Name:           "addon2",
+							Group:          "group2",
+							DefaultEnabled: true,
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Cluster{
+				Name:       tt.fields.Name,
+				Addons:     tt.fields.Addons,
+				Properties: tt.fields.Properties,
+			}
+			if err := c.AllRequiredPropertiesSet(tt.args.config); (err != nil) != tt.wantErr {
+				t.Errorf("Cluster.AllRequiredPropertiesSet() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
