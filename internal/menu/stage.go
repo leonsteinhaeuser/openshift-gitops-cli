@@ -70,7 +70,7 @@ func (s *stageMenu) menuProperties(stage *project.Stage) (map[string]string, err
 
 		prompt := promptui.SelectWithAdd{
 			Label:    "Properties",
-			Items:    append(utils.MapKeysToList(properties), "Done"),
+			Items:    append(utils.SortStringSlice(utils.MapKeysToList(properties)), "Done"),
 			AddLabel: "Create Property",
 		}
 		_, result, err := prompt.Run()

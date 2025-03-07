@@ -80,7 +80,7 @@ func (e *environmentMenu) menuEnvironmentProperties(env *project.Environment) (m
 
 		prompt := promptui.SelectWithAdd{
 			Label:    "Properties",
-			Items:    append(utils.MapKeysToList(properties), "Done"),
+			Items:    append(utils.SortStringSlice(utils.MapKeysToList(properties)), "Done"),
 			AddLabel: "Create Property",
 		}
 		_, result, err := prompt.Run()

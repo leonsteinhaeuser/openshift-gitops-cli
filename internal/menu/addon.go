@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"slices"
 
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
@@ -20,11 +19,9 @@ type addonClusterMenu struct {
 
 func (a *addonClusterMenu) menuManageAddons(cluster *project.Cluster) error {
 	for {
-		addons := utils.MapKeysToList(a.config.ParsedAddons)
-		slices.Sort(addons)
 		prompt := promptui.Select{
 			Label:     "Manage Addons",
-			Items:     append(addons, "Done"),
+			Items:     append(utils.SortStringSlice(utils.MapKeysToList(a.config.ParsedAddons)), "Done"),
 			Templates: a.templateManageAddons(cluster),
 			Size:      10,
 		}
@@ -120,7 +117,7 @@ func (a *addonClusterMenu) menuAddonProperties(cluster *project.Cluster, addon s
 	for {
 		prompt := promptui.Select{
 			Label: "Properties",
-			Items: append(utils.MapKeysToList(a.config.ParsedAddons[addon].Properties), "Done"),
+			Items: append(utils.SortStringSlice(utils.MapKeysToList(a.config.ParsedAddons[addon].Properties)), "Done"),
 			// TODO: add template to display property options
 			Templates: a.menuTemplateAddonProperties(cluster, addon),
 		}

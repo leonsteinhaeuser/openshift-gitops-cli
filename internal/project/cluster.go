@@ -128,3 +128,29 @@ func (c *Cluster) AllRequiredPropertiesSet(config *ProjectConfig) error {
 	}
 	return nil
 }
+
+// SetDefaultAddons sets the default addons for the cluster
+func (c *Cluster) SetDefaultAddons(config *ProjectConfig) {
+	for addonName, addon := range config.Addons {
+		if !addon.DefaultEnabled {
+			// skip disabled addons
+			continue
+		}
+
+		_, ok := c.Addons[addonName]
+		if ok {
+			// was found, we respect the user setting
+			continue
+		}
+
+		cAddon := &ClusterAddon{
+			Enabled:    true,
+			Properties: map[string]any{},
+		}
+
+		for key, property := range config.ParsedAddons[addonName].Properties {
+			cAddon.Properties[key] = property.Default
+		}
+		c.Addons[addonName] = cAddon
+	}
+}

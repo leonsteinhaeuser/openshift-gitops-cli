@@ -37,6 +37,7 @@ func (c *clusterMenu) menuCreateCluster(env, stage string) (*project.Cluster, er
 		Addons:     map[string]*project.ClusterAddon{},
 		Properties: map[string]string{},
 	}
+	cluster.SetDefaultAddons(c.config)
 
 	err = c.menuSettings(env, stage, cluster)
 	if err != nil {
@@ -90,6 +91,7 @@ func (c *clusterMenu) menuUpdateCluster(envName, stageName, clusterName string) 
 	if cluster.Name == "" {
 		cluster.Name = clusterName
 	}
+	cluster.SetDefaultAddons(c.config)
 	err := c.menuSettings(envName, stageName, cluster)
 	if err != nil {
 		return nil, err
@@ -116,7 +118,7 @@ func (c *clusterMenu) menuClusterSettingsProperties(env, stage string, cluster *
 
 		prompt := promptui.SelectWithAdd{
 			Label:    "Properties",
-			Items:    append(utils.MapKeysToList(properties), "Done"),
+			Items:    append(utils.SortStringSlice(utils.MapKeysToList(properties)), "Done"),
 			AddLabel: "Create Property",
 		}
 		_, result, err := prompt.Run()
