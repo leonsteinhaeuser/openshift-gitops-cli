@@ -60,7 +60,6 @@ func (c *Cluster) DisableAddon(addon string) {
 		return
 	}
 	c.Addons[addon].Enabled = false
-	c.Addons[addon].Properties = map[string]any{}
 }
 
 // Render renders the cluster configuration using the given project templates
