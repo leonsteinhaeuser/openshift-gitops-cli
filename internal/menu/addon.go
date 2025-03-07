@@ -206,7 +206,6 @@ func (a *addonMenu) menuCreateAddon() (*project.Addon, error) {
 		return nil, err
 	}
 
-	// let's ask if the user want to add additional properties
 	isEnabledByDefault, err := cli.BooleanQuestion(a.writer, a.reader, "Should this addon be enabled by default?", false)
 	if err != nil {
 		return nil, err
@@ -250,7 +249,56 @@ func (a *addonMenu) menuCreateAddon() (*project.Addon, error) {
 }
 
 func (a *addonMenu) menuUpdateAddon(addonName string) (*project.Addon, error) {
-	return nil, fmt.Errorf("menuUpdateAddon not implemented")
+	for {
+		prompt := promptui.SelectWithAdd{
+			Label:    "Select Option",
+			Items:    []string{"Set Group", "Set Path", "Enable / Disable by Default", "Done"},
+			AddLabel: "Create new group",
+		}
+		_, option, err := prompt.Run()
+		if err != nil {
+			return nil, err
+		}
+
+		addon := a.config.Addons[addonName]
+		switch option {
+		case "Set Group":
+			prompt := promptui.SelectWithAdd{
+				Label:    "Select Group",
+				Items:    a.config.AddonGroups(),
+				AddLabel: "Create new group",
+			}
+			_, groupName, err := prompt.Run()
+			if err != nil {
+				return nil, err
+			}
+			addon.Group = groupName
+			continue
+		case "Set Path":
+			sourcePath, err := cli.StringQuestion(a.writer, a.reader, "Please provide the path to the location of the addon (the directory must contain a manifest.yaml file)", addon.Path, func(s string) error {
+				if s == "" {
+					return fmt.Errorf("addon source path cannot be empty")
+				}
+				return nil
+			})
+			if err != nil {
+				return nil, err
+			}
+			addon.Path = sourcePath
+			continue
+		case "Enable / Disable by Default":
+			isEnabledByDefault, err := cli.BooleanQuestion(a.writer, a.reader, "Should this addon be enabled by default?", addon.DefaultEnabled)
+			if err != nil {
+				return nil, err
+			}
+			addon.DefaultEnabled = isEnabledByDefault
+			continue
+		case "Done":
+			return &addon, nil
+		default:
+			return nil, fmt.Errorf("invalid option %s", option)
+		}
+	}
 }
 
 func (a *addonMenu) menuDeleteAddon(addonName string) (*project.Addon, error) {

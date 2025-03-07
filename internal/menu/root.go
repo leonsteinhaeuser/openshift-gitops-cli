@@ -233,11 +233,14 @@ func RootMenu(config *project.ProjectConfig, eventCh chan<- Event) error {
 					return err
 				}
 
-				_, err = addonMenu.menuUpdateAddon(*addonName)
+				eventCh <- newPreUpdateEvent(EventOriginAddon, *addonName, "", "")
+				addon, err := addonMenu.menuUpdateAddon(*addonName)
 				if err != nil {
 					return err
 				}
-				return errors.New("addon update not implemented")
+				config.Addons[*addonName] = *addon
+				eventCh <- newPostUpdateEvent(EventOriginAddon, *addonName, "", "")
+				return nil
 			}
 
 			delete := func() error {
