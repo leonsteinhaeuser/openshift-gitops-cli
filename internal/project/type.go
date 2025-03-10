@@ -5,13 +5,6 @@ import (
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
 )
 
-type Stage struct {
-	Name       string              `json:"-"`
-	Properties map[string]string   `json:"properties"`
-	Actions    Actions             `json:"actions"`
-	Clusters   map[string]*Cluster `json:"clusters"`
-}
-
 type Addon struct {
 	Name           string `json:"-"`
 	Group          string `json:"group"`
