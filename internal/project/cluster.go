@@ -50,10 +50,9 @@ func (c *Cluster) EnableAddon(addon string) {
 		return
 	}
 	c.Addons[addon].Enabled = true
-	fmt.Println("Enabled addon option:", c.Addons[addon].Enabled)
 }
 
-// DisableAddon disables the addon for the cluster by setting the enabled flag to false and removing all properties
+// DisableAddon disables the addon for the cluster by setting the enabled flag to false
 func (c *Cluster) DisableAddon(addon string) {
 	if _, ok := c.Addons[addon]; !ok {
 		// already disabled or not found
