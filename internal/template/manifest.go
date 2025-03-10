@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"sigs.k8s.io/yaml"
@@ -38,24 +39,29 @@ const (
 // checkType validates the given value against the property type
 // If the value is valid, it will be returned, otherwise an error is returned
 func (p PropertyType) checkType(value any) (any, error) {
-	switch v := value.(type) {
-	case string:
+	if value == nil {
+		return nil, nil
+	}
+	kind := reflect.TypeOf(value).Kind()
+	typeValue := reflect.ValueOf(value)
+	switch kind {
+	case reflect.String:
 		if p != PropertyTypeString {
-			return nil, fmt.Errorf("expected type %s, got string", p)
+			return nil, fmt.Errorf("expected type %s, got %v", p, kind)
 		}
-		return v, nil
-	case bool:
+		return typeValue.String(), nil
+	case reflect.Bool:
 		if p != PropertyTypeBool {
-			return nil, fmt.Errorf("expected type %s, got bool", p)
+			return nil, fmt.Errorf("expected type %s, got %v", p, kind)
 		}
-		return v, nil
-	case int:
+		return typeValue.Bool(), nil
+	case reflect.Int:
 		if p != PropertyTypeInt {
-			return nil, fmt.Errorf("expected type %s, got int", p)
+			return nil, fmt.Errorf("expected type %s, got %v", p, kind)
 		}
-		return v, nil
+		return typeValue.Int(), nil
 	default:
-		return nil, fmt.Errorf("unsupported type %T", v)
+		return nil, fmt.Errorf("expected type %s, got %v", p, reflect.TypeOf(value).Kind())
 	}
 }
 
