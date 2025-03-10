@@ -1,0 +1,76 @@
+name: Bug Report
+description: File a bug report.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+projects: ["leonsteinhaeuser/26"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: checkboxes
+    id: check
+    attributes:
+      label: Checked for duplicates
+      description: Have you checked for duplicates?
+      options:
+        - label: I have checked for duplicate issues
+          required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you see!
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: The area of the application this affects
+      description: What part of the application is this bug affecting?
+      options:
+        - "Environment"
+        - "Stage"
+        - "Cluster"
+        - "Addon"
+        - "Other (default)"
+      default: 4
+    validations:
+      required: true
+  - type: dropdown
+    id: action
+    attributes:
+      label: The action you were trying to perform
+      description: What action were you trying to perform when this bug occurred?
+      options:
+        - "Create"
+        - "Update"
+        - "Delete"
+        - "Done"
+        - "Other (default)"
+      default: 4
+    validations:
+      required: true
+  - type: textarea
+    id: version
+    attributes:
+      label: Minor Version
+      description: What minor version of our software are you running?
+      placeholder: v0.4.0
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Command Line Output
+      description: Please copy and paste any relevant command line output. If you have a lot of output, please consider using a service like [GitHub Gist](https://gist.github.com).
+      render: shell
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://example.com).
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true
