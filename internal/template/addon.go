@@ -1,6 +1,7 @@
 package template
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -89,7 +90,7 @@ func (a AddonTemplateCarrier) Render(basePath string, properties AddonTemplateDa
 	if err != nil {
 		return err
 	}
-	for fileName, template := range a.Files {
+	for fileName, tmpl := range a.Files {
 		baseFileName := filepath.Base(fileName)
 		if len(fileName) > len(baseFileName) {
 			// create the directory structure
@@ -106,9 +107,9 @@ func (a AddonTemplateCarrier) Render(basePath string, properties AddonTemplateDa
 		}
 		defer file.Close()
 
-		err = template.Execute(file, properties)
+		err = tmpl.Execute(file, properties)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to render template file %s: %w", fileName, err)
 		}
 	}
 	return nil
