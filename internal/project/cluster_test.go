@@ -656,7 +656,8 @@ func TestCluster_DisableAddon(t *testing.T) {
 			fields: fields{
 				Addons: map[string]*ClusterAddon{
 					"addon1": {
-						Enabled: true,
+						Enabled:    true,
+						Properties: map[string]any{},
 					},
 				},
 			},
@@ -688,7 +689,7 @@ func TestCluster_DisableAddon(t *testing.T) {
 				Addons: map[string]*ClusterAddon{
 					"addon1": {
 						Enabled:    false,
-						Properties: map[string]any{},
+						Properties: nil,
 					},
 				},
 			},
