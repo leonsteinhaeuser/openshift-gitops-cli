@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 )
 
@@ -503,8 +504,9 @@ func TestLoadManifest(t *testing.T) {
 				path: os.TempDir(),
 			},
 			want: &TemplateManifest{
-				Name:  "test",
-				Group: "test",
+				BasePath: "test",
+				Name:     "test",
+				Group:    "test",
 				Properties: map[string]Property{
 					"test": {
 						Required:    true,
@@ -570,8 +572,9 @@ func TestLoadManifest(t *testing.T) {
 				path: filepath.Join(os.TempDir(), "manifest.yaml"),
 			},
 			want: &TemplateManifest{
-				Name:  "test",
-				Group: "test",
+				BasePath: "test",
+				Name:     "test",
+				Group:    "test",
 				Properties: map[string]Property{
 					"test": {
 						Required:    true,
@@ -610,8 +613,10 @@ func TestLoadManifest(t *testing.T) {
 				t.Errorf("LoadManifest() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("LoadManifest() = %v, want %v", got, tt.want)
+
+			diff := cmp.Diff(got, tt.want)
+			if diff != "" {
+				t.Errorf("LoadManifest() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
