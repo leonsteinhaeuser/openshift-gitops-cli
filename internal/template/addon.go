@@ -1,6 +1,7 @@
 package template
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"path"
@@ -8,6 +9,11 @@ import (
 	"slices"
 	"strings"
 	"text/template"
+)
+
+const (
+	// include all files in the directory
+	includeAllInDirectory = "./"
 )
 
 type AddonTemplateCarrier struct {
@@ -39,9 +45,14 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 			return nil
 		}
 
-		bPath := filepath.Base(fpath)
+		fileName := strings.TrimPrefix(strings.TrimPrefix(fpath, source.BasePath), string(os.PathSeparator))
 		isFound := slices.IndexFunc(source.Files, func(indexEntry string) bool {
-			return indexEntry == bPath
+			// FIXME: this is a hack, we need to find a better way to handle this
+			if indexEntry == includeAllInDirectory {
+				// include all files in the directory
+				return true
+			}
+			return indexEntry == fileName
 		})
 		if isFound == -1 {
 			// not a file that is part of the template
@@ -53,7 +64,7 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 			return err
 		}
 
-		template.Files[bPath] = tmpl
+		template.Files[fileName] = tmpl
 		return nil
 	})
 	if err != nil {
@@ -79,7 +90,16 @@ func (a AddonTemplateCarrier) Render(basePath string, properties AddonTemplateDa
 	if err != nil {
 		return err
 	}
-	for fileName, template := range a.Files {
+	for fileName, tmpl := range a.Files {
+		baseFileName := filepath.Base(fileName)
+		if len(fileName) > len(baseFileName) {
+			// create the directory structure
+			err := os.MkdirAll(path.Join(originPath, strings.TrimSuffix(fileName, baseFileName)), 0775)
+			if err != nil {
+				return err
+			}
+		}
+
 		// create the file and render the template
 		file, err := os.OpenFile(path.Join(originPath, fileName), os.O_CREATE|os.O_WRONLY, 0664)
 		if err != nil {
@@ -87,9 +107,9 @@ func (a AddonTemplateCarrier) Render(basePath string, properties AddonTemplateDa
 		}
 		defer file.Close()
 
-		err = template.Execute(file, properties)
+		err = tmpl.Execute(file, properties)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to render template file %s: %w", fileName, err)
 		}
 	}
 	return nil

@@ -2,9 +2,9 @@ package menu
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
-	"path"
 
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
@@ -12,24 +12,18 @@ import (
 	"github.com/manifoldco/promptui"
 )
 
-// CreateStage creates a context menu to create a new stage
-// As part of this we ask for the environment and stage name
-func CreateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*CarrierCreateStage, error) {
-	// read environments
-	prompt := promptui.Select{
-		Label: "Select Environment",
-		Items: utils.MapKeysToList(config.Environments),
-	}
-	_, envResult, err := prompt.Run()
-	if err != nil {
-		return nil, err
-	}
+type stageMenu struct {
+	writer io.Writer
+	reader *bufio.Reader
+	config *project.ProjectConfig
+}
 
-	stageName, err := cli.StringQuestion(writer, reader, "Stage Name", "", func(s string) error {
-		if s == "" {
+func (s *stageMenu) menuCreateStage(env string) (*project.Stage, error) {
+	stageName, err := cli.StringQuestion(s.writer, s.reader, "Stage Name", "", func(str string) error {
+		if str == "" {
 			return fmt.Errorf("stage name cannot be empty")
 		}
-		if _, ok := config.Environments[envResult].Stages[s]; ok {
+		if _, ok := s.config.Environments[env].Stages[str]; ok {
 			return fmt.Errorf("stage already exists")
 		}
 		return nil
@@ -38,77 +32,69 @@ func CreateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.
 		return nil, err
 	}
 
-	// let's ask if the user want to add additional properties
-	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to add properties?", false)
+	stage := &project.Stage{
+		Name:       stageName,
+		Properties: map[string]string{},
+		Actions:    project.Actions{},
+		Clusters:   map[string]*project.Cluster{},
+	}
+
+	properties, err := s.menuProperties(stage)
 	if err != nil {
 		return nil, err
 	}
-	properties := map[string]string{}
-	if createProperties {
-		pts, err := askForProperties(config.Environments[envResult].Properties, writer, reader)
-		if err != nil {
-			return nil, err
-		}
-		properties = pts
-	}
+	stage.Properties = properties
 
-	// ask for confirmation
-	fqnPath := path.Join(config.BasePath, envResult, stageName)
-	confirmation, err := cli.BooleanQuestion(writer, reader, fmt.Sprintf("Are you sure to create a new stage in %s", fqnPath), false)
-	if err != nil {
-		return nil, err
-	}
-	if !confirmation {
-		return nil, fmt.Errorf("confirmation denied")
-	}
-
-	return &CarrierCreateStage{
-		Environment: envResult,
-		StageName:   stageName,
-		Properties:  utils.ReduceMap(properties, config.Environments[envResult].Properties),
-	}, nil
+	return stage, nil
 }
 
-// UpdateStage creates a context menu to update an existing stage
-// As part of this we ask for the environment name and stage name
-func UpdateStage(config *project.ProjectConfig, writer io.Writer, reader *bufio.Reader) (*CarrierCreateStage, error) {
-	// read environments
-	prompt := promptui.Select{
-		Label: "Select Environment",
-		Items: utils.MapKeysToList(config.Environments),
-	}
-	_, envResult, err := prompt.Run()
+func (s *stageMenu) menuUpdateStage(envName, stageName string) (*project.Stage, error) {
+	stage := s.config.Environments[envName].Stages[stageName]
+	properties, err := s.menuProperties(stage)
 	if err != nil {
 		return nil, err
 	}
+	stage.Properties = properties
+	return stage, nil
+}
 
-	// read stage
-	prompt = promptui.Select{
-		Label: "Select Stage",
-		Items: utils.MapKeysToList(config.Environments[envResult].Stages),
-	}
-	_, stageResult, err := prompt.Run()
-	if err != nil {
-		return nil, err
-	}
+func (s *stageMenu) menuDeleteStage(env, stage string) error {
+	// TODO: menu is missing to delete the stage (cascade delete)
+	return errors.New("not implemented")
+}
 
-	// let's ask if the user want to add additional properties
-	createProperties, err := cli.BooleanQuestion(writer, reader, "Do you want to update properties?", false)
-	if err != nil {
-		return nil, err
-	}
-	properties := map[string]string{}
-	if createProperties {
-		pts, err := askForProperties(config.Environments[envResult].Stages[stageResult].Properties, writer, reader)
+func (s *stageMenu) menuProperties(stage *project.Stage) (map[string]string, error) {
+	stageProperties := map[string]string{}
+	for {
+		properties := utils.MergeMaps(stage.Properties, stageProperties)
+
+		prompt := promptui.SelectWithAdd{
+			Label:    "Properties",
+			Items:    append(utils.SortStringSlice(utils.MapKeysToList(properties)), "Done"),
+			AddLabel: "Create Property",
+		}
+		_, result, err := prompt.Run()
 		if err != nil {
 			return nil, err
 		}
-		properties = pts
-	}
+		if result == "" {
+			return nil, fmt.Errorf("property key cannot be empty")
+		}
+		if result == "Done" {
+			// user is done
+			break
+		}
 
-	return &CarrierCreateStage{
-		Environment: envResult,
-		StageName:   stageResult,
-		Properties:  utils.ReduceMap(properties, config.Environments[envResult].Properties),
-	}, nil
+		val, err := cli.StringQuestion(s.writer, s.reader, "Property Value", properties[result], func(s string) error {
+			if s == "" {
+				return fmt.Errorf("property value cannot be empty")
+			}
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+		stageProperties[result] = val
+	}
+	return stageProperties, nil
 }

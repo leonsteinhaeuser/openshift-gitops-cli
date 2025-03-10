@@ -12,13 +12,17 @@ Stage: testing
 Cluster name: my-cluster
 ```
 
-The first thing we need to create is the environment. For this, just select the "Create Environment" option and provide the name of the environment. In our case, the environment name is `dev`.
+The first thing we need to create is the environment. For this, select the "Manage Environment" and next select "Create". The CLI will ask you several questions to gather information about the environment. For example, you can provide the name of the environment and properties. When you have provided all the information, select "Done". This option will lead you back to the main menu.
 
-The next step is to create the stage. For this, just select the "Create Stage" option, select the "Environment" you just created, and provide the name of the stage. In our case, the stage name is `testing`.
+The next step is to create the stage. For this, select the "Manage Stage" option, select the "Environment" you just created, and answer the questions the CLI provides. For example, you can provide the name of the stage and properties. When you have provided all the information, select "Done". This option will lead you back to the main menu.
 
-The last step is to create the cluster. For this, just select the "Create Cluster" option, select the "Environment" and "Stage" you just created, and provide the name of the cluster. In our case, the cluster name is `my-cluster`.
+The last step is to create the cluster. For this, select the "Manage Cluster" option followed by the "Create" option. Select the "Environment" and "Stage" you just created and answer the questions the CLI provides. For example, you can provide the name of the cluster, addons, and properties. When you have provided all the information, select "Done". This option will lead you back to the main menu and create the folder structure and files needed to create the bootstrap.
 
-For each of the steps, you will be asked if you want to add additional properties. Properties are key-value pairs that you can use to store additional information about the environment, stage, or cluster. For example, you can add properties like `region`, `zone`, `network`, etc. These properties can then be used in the templates to customize the resources that will be created.
+For each of the steps, you will be asked if you want to add additional properties. Properties are key-value pairs that you can use to store additional information about the environment, stage, or cluster. For example, you can add properties like `region`, `zone`, `network`, etc. These properties can then be used in the templates to customize the resources that will be created. If you define the same key in the environment, stage, and cluster, the value of the highest level will be used.
+
+* For example, if you define a property called `region` in the environment and the stage, the value of the stage will be used.
+* If you define a property called `region` in the environment and the cluster, the value of the cluster will be used.
+* If you define a property called `region` in the stage and the cluster, the value of the cluster will be used.
 
 After you have created the environment, stage, and cluster, the CLI will create the `PROJECT.yaml` file, which contains the information about the environment, stage, and cluster. The CLI will also create the folder structure for our OpenShift cluster.
 
@@ -79,58 +83,56 @@ Properties: [gitURL: https://git.example.com/repo/name.git, gitBranch: main]
 
 ```bash
 user@pc % ogc
-✔ Create Environment
-Environment Name: dev
-Do you want to add properties? [Y/N]: y
+✔ Manage Environment
+✔ Create
+Environment Name: aws
 Create Property: gitURL
-Property Value: https://git.url/repo/name.git
-Do you want to add another property? [Y/N]: y
-Create Property: gitBranch
-Property Value: main
-Do you want to add another property? [Y/N]: n
-Are you sure to create a new environment in overlays/dev [Y/N]: y
+Property Value: https://git.my-url.local
+✔ Done
+✔ Done
 ```
 
 2) Create the stage:
 
 ```bash
 user@pc % ogc
-✔ Create Stage
-✔ dev
+✔ Manage Stage
+✔ Create
+✔ aws
 Stage Name: dev
-Do you want to add properties? [Y/N]: y
-✔ gitBranch
-Property Value [main]: main
-Do you want to add or update another property? [Y/N]: y
-✔ gitURL
-Property Value [https://git.url/repo/name.git]: https://git.url/repo/name.git
-Do you want to add or update another property? [Y/N]: n
-Are you sure to create a new stage in overlays/dev/dev [Y/N]: y
+Create Property: gitBranch
+Property Value: main
+✔ Done
 ```
 
 3) Create the cluster:
 
 ```bash
-user@pc % ogc
-✔ Create Cluster
-✔ dev
+✔ Manage Cluster
+✔ Create
+✔ aws
 ✔ dev
 Cluster Name: my-cluster
-✔ kyverno
+✔ Addons
 ✔ monitoring
-✔ Enable / Disable
-Do you really want to enable monitoring? [Y/N]: y
-✔ ingress_host
-Value []: monitoring.my-domain.local
+✔ Enable
+Enable addon monitoring
 ✔ Done
-Do you want to add properties? [Y/N]: y
-✔ gitURL
-Property Value [https://git.url/repo/name.git]: https://git.example.com/repo/name.git
-Do you want to add or update another property? [Y/N]: y
-✔ gitBranch
-Property Value [main]: main
-Do you want to add or update another property? [Y/N]: n
-Are you sure to create a new cluster in overlays/dev/dev/my-cluster with addons: [kyverno monitoring] [Y/N]: y
+✔ kyverno
+✔ Enable
+Enable addon kyverno
+✔ Done
+✔ cluster-policies
+✔ Enable
+Enable addon cluster-policies
+✔ Settings
+✔ enableNetworkPolicies
+Value: true
+✔ Done
+✔ Done
+✔ Done
+✔ Done
+✔ Done
 ```
 
 When you have created the environment, stage, and cluster, the CLI will create the corresponding entries in the `PROJECT.yaml` and directory structure.
@@ -224,10 +226,23 @@ The **group** is the name of the parent folder where the addon is located. In ou
 
 ```bash
 user@pc % ogc
-✔ Add Addon
+✔ Manage Addon
+✔ Create
 Addon Name: grafana
 Should this addon be enabled by default? [Y/N]: y
 Please provide the path to the location of the addon (the directory must contain a manifest.yaml file): examples/addons/grafana
-Create new group: cluster-configs
+Create new group: monitoring
 Are you sure you want to create the addon? [Y/N]: y
+✔ Done
 ```
+
+## Template / Addon scopes
+
+No matter if you define an addon or a template, you always have access to the following variables:
+
+| Variable | Scope | Description |
+| --- | --- | --- |
+| `{{ .Environment }}` | addon, tempate | The environment variable returns the name of the environment we are currenlty in |
+| `{{ .Stage }}` | addon, tempate | The stage variable returns the name of the stage we are currently in |
+| `{{ .Cluster }}` | addon, tempate | The cluster variable returns the name of the cluster we are currently in |
+| `{{ .Properties.<key> }}` | addon, tempate | The properties variable returns the value of the property with the key `<key>`. The property keys in addons differ from the property keys in the template, as the addon does not currently have access to the environment, stage or cluster properties. In order for the addon to have properties available, you must define a property key in the `manifest.yaml` file. All properties defined there are then available for your addon template files. |
