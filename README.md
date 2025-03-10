@@ -235,3 +235,14 @@ Create new group: monitoring
 Are you sure you want to create the addon? [Y/N]: y
 ✔ Done
 ```
+
+## Template / Addon scopes
+
+No matter if you define an addon or a template, you always have access to the following variables:
+
+| Variable | Scope | Description |
+| --- | --- | --- |
+| `{{ .Environment }}` | addon, tempate | The environment variable returns the name of the environment we are currenlty in |
+| `{{ .Stage }}` | addon, tempate | The stage variable returns the name of the stage we are currently in |
+| `{{ .Cluster }}` | addon, tempate | The cluster variable returns the name of the cluster we are currently in |
+| `{{ .Properties.<key> }}` | addon, tempate | The properties variable returns the value of the property with the key `<key>`. The property keys in addons differ from the property keys in the template, as the addon does not currently have access to the environment, stage or cluster properties. In order for the addon to have properties available, you must define a property key in the `manifest.yaml` file. All properties defined there are then available for your addon template files. |
