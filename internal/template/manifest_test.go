@@ -6,6 +6,8 @@ import (
 	"reflect"
 	"testing"
 
+	"strings"
+
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 )
@@ -617,6 +619,204 @@ func TestLoadManifest(t *testing.T) {
 			diff := cmp.Diff(got, tt.want)
 			if diff != "" {
 				t.Errorf("LoadManifest() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func mockTemplateFile(path string, templateName string) error {
+	// create root directory
+	path = filepath.Join(path, templateName)
+	err := os.MkdirAll(path, 0775)
+	if err != nil {
+		return err
+	}
+
+	// create a file in a subdirectory
+	configDir := filepath.Join(path, "config")
+	err = os.MkdirAll(configDir, 0775)
+	if err != nil {
+		return err
+	}
+
+	// create a file in a subdirectory
+	patchesDir := filepath.Join(path, "patches")
+	err = os.MkdirAll(patchesDir, 0775)
+	if err != nil {
+		return err
+	}
+
+	// create the addon entrypoint file
+	file, err := os.OpenFile(filepath.Join(path, "manifest.yaml"), os.O_CREATE|os.O_WRONLY, 0664)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	bts, err := yaml.Marshal(&TemplateManifest{
+		Name:  templateName,
+		Group: templateName,
+		Properties: map[string]Property{
+			"test": {
+				Required:    true,
+				Default:     "default",
+				Type:        PropertyTypeString,
+				Description: "test",
+			},
+		},
+		Annotations: map[string]string{
+			"test": "test",
+		},
+		Files: []string{"./"},
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = file.Write(bts)
+	if err != nil {
+		return err
+	}
+
+	//
+	// create some example files
+	//
+	file, err = os.OpenFile(filepath.Join(path, "test.yaml"), os.O_CREATE|os.O_WRONLY, 0664)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write([]byte("test: {{ .Properties.test }}"))
+	if err != nil {
+		return err
+	}
+
+	file, err = os.OpenFile(filepath.Join(configDir, "test.yaml"), os.O_CREATE|os.O_WRONLY, 0664)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write([]byte("test: {{ .Properties.test }}"))
+	if err != nil {
+		return err
+	}
+
+	file, err = os.OpenFile(filepath.Join(patchesDir, "test.yaml"), os.O_CREATE|os.O_WRONLY, 0664)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write([]byte("test: {{ .Properties.test }}"))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func TestLoadTemplateManifest(t *testing.T) {
+	type args struct {
+		path string
+	}
+	type actions struct {
+		PreTest func(path string)
+	}
+	tests := []struct {
+		name    string
+		action  actions
+		args    args
+		want    []Template
+		wantErr bool
+	}{
+		{
+			name: "without filename in path",
+			action: actions{
+				PreTest: func(path string) {
+					err := mockTemplateFile(path, "one")
+					if err != nil {
+						t.Fatal(err)
+						return
+					}
+
+					err = mockTemplateFile(path, "two")
+					if err != nil {
+						t.Fatal(err)
+						return
+					}
+				},
+			},
+			args: args{
+				path: os.TempDir(),
+			},
+			want: []Template{
+				{
+					Path: "one",
+					TemplateManifest: TemplateManifest{
+						BasePath: "one",
+						Name:     "one",
+						Group:    "one",
+						Properties: map[string]Property{
+							"test": {
+								Required:    true,
+								Default:     "default",
+								Type:        PropertyTypeString,
+								Description: "test",
+							},
+						},
+						Annotations: map[string]string{
+							"test": "test",
+						},
+						Files: []string{"./"},
+					},
+				},
+				{
+					Path: "two",
+					TemplateManifest: TemplateManifest{
+						BasePath: "two",
+						Name:     "two",
+						Group:    "two",
+						Properties: map[string]Property{
+							"test": {
+								Required:    true,
+								Default:     "default",
+								Type:        PropertyTypeString,
+								Description: "test",
+							},
+						},
+						Annotations: map[string]string{
+							"test": "test",
+						},
+						Files: []string{"./"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+
+			tt.action.PreTest(dir)
+
+			got, err := LoadTemplateManifest(dir)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LoadTemplateManifest() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// in order to compare the paths, we need to sanitize the paths, to make it easier for the comparison
+			for idx, tmpl := range got {
+				tmpl.Path = strings.TrimPrefix(strings.TrimPrefix(tmpl.Path, dir), string(os.PathSeparator))
+				got[idx] = tmpl
+			}
+
+			diff := cmp.Diff(got, tt.want)
+			if diff != "" {
+				t.Errorf("LoadTemplateManifest() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
