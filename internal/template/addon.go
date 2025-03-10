@@ -28,14 +28,12 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 		Group: source.Group,
 		Files: map[string]*template.Template{},
 	}
-	fsubDir := ""
 	err := filepath.WalkDir(source.BasePath, func(fpath string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
 		if d.IsDir() {
-			fsubDir = strings.TrimPrefix(strings.TrimPrefix(fpath, source.BasePath), string(os.PathSeparator))
 			// skip directories
 			return nil
 		}
@@ -46,14 +44,14 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 			return nil
 		}
 
-		bPath := filepath.Base(fpath)
+		fileName := strings.TrimPrefix(strings.TrimPrefix(fpath, source.BasePath), string(os.PathSeparator))
 		isFound := slices.IndexFunc(source.Files, func(indexEntry string) bool {
 			// FIXME: this is a hack, we need to find a better way to handle this
 			if indexEntry == includeAllInDirectory {
 				// include all files in the directory
 				return true
 			}
-			return indexEntry == bPath
+			return indexEntry == fileName
 		})
 		if isFound == -1 {
 			// not a file that is part of the template
@@ -65,7 +63,7 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 			return err
 		}
 
-		template.Files[path.Join(fsubDir, bPath)] = tmpl
+		template.Files[fileName] = tmpl
 		return nil
 	})
 	if err != nil {
