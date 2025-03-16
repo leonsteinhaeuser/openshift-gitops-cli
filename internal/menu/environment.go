@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/k0kubun/pp/v3"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
@@ -58,8 +57,6 @@ func (e *environmentMenu) menuUpdateEnvironment(envName string) (*project.Enviro
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Updated Environment")
-	pp.Println(environment)
 	return environment, nil
 }
 
@@ -82,7 +79,6 @@ func (e *environmentMenu) menuSettings(environment *project.Environment) error {
 				reader: e.reader,
 				config: e.config,
 			}
-			pp.Println(environment)
 			err := addon.menuManageAddons(environment)
 			if err != nil {
 				return err
