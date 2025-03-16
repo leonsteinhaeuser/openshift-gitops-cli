@@ -246,3 +246,4 @@ No matter if you define an addon or a template, you always have access to the fo
 | `{{ .Stage }}` | addon, tempate | The stage variable returns the name of the stage we are currently in |
 | `{{ .Cluster }}` | addon, tempate | The cluster variable returns the name of the cluster we are currently in |
 | `{{ .Properties.<key> }}` | addon, tempate | The properties variable returns the value of the property with the key `<key>`. The property keys in addons differ from the property keys in the template, as the addon does not currently have access to the environment, stage or cluster properties. In order for the addon to have properties available, you must define a property key in the `manifest.yaml` file. All properties defined there are then available for your addon template files. |
+| `{{ .ClusterProperties.<key> }}` | addon | The cluster properties is a map that contains all properties that are defined for the cluster. |
