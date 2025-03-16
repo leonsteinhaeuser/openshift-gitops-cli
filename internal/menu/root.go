@@ -130,7 +130,7 @@ func RootMenu(config *project.ProjectConfig, eventCh chan<- Event) error {
 				// update stage in config
 				config.Environments[*envName].Stages[stage.Name] = stage
 				eventCh <- newPostUpdateEvent(EventOriginStage, *envName, stage.Name, "")
-				return errors.New("stage update not implemented")
+				return nil
 			}
 
 			delete := func() error {
