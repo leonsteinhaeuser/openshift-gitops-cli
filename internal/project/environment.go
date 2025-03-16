@@ -1,5 +1,9 @@
 package project
 
+var (
+	_ AddonHandler = &Environment{}
+)
+
 type Environment struct {
 	Name       string                   `json:"-"`
 	Properties map[string]string        `json:"properties"`
@@ -35,4 +39,14 @@ func (e *Environment) DisableAddon(addon string) {
 		return
 	}
 	e.Addons[addon].Enabled = false
+}
+
+// GetAddons returns the environment addons
+func (e *Environment) GetAddons() ClusterAddons {
+	return e.Addons
+}
+
+// GetAddon returns the addon by name
+func (e *Environment) GetAddon(name string) *ClusterAddon {
+	return e.Addons[name]
 }
