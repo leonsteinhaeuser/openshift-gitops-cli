@@ -65,6 +65,8 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 		return fmt.Errorf("failed to load base templates: %w", err)
 	}
 
+	envConfig := config.GetEnvironment(env)
+	stageConfig := envConfig.GetStage(stage)
 	addons := map[string]template.AddonData{}
 	for k, v := range c.Addons {
 		if !v.Enabled {
@@ -72,7 +74,7 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 		}
 		addons[k] = template.AddonData{
 			Annotations: config.ParsedAddons[k].Annotations,
-			Properties:  v.Properties,
+			Properties:  utils.MergeMaps(envConfig.GetAddon(k).Properties, stageConfig.GetAddon(k).Properties, v.Properties),
 		}
 	}
 
@@ -97,10 +99,11 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 			return fmt.Errorf("failed to load addon %s templates: %w, value: %+v", addonName, err, config.ParsedAddons[addonName])
 		}
 		err = atc.Render(config.BasePath, template.AddonTemplateData{
-			Environment: env,
-			Stage:       stage,
-			Cluster:     c.Name,
-			Properties:  addonValue.Properties,
+			Environment:       env,
+			Stage:             stage,
+			Cluster:           c.Name,
+			ClusterProperties: properties,
+			Properties:        addonValue.Properties,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to render addon: %s, Error: %w", addonName, err)

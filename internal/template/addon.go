@@ -74,10 +74,11 @@ func LoadTemplatesFromAddonManifest(source TemplateManifest) (*AddonTemplateCarr
 }
 
 type AddonTemplateData struct {
-	Environment string
-	Stage       string
-	Cluster     string
-	Properties  map[string]any
+	Environment       string
+	Stage             string
+	Cluster           string
+	ClusterProperties map[string]string
+	Properties        map[string]any
 }
 
 func (a AddonTemplateCarrier) Render(basePath string, properties AddonTemplateData) error {
