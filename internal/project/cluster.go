@@ -7,24 +7,9 @@ import (
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
 )
 
-type ClusterAddon struct {
-	Enabled    bool           `json:"enabled"`
-	Properties map[string]any `json:"properties"`
-}
-
-// AllRequiredPropertiesSet checks if all required properties are set for the addon
-func (ca *ClusterAddon) AllRequiredPropertiesSet(config *ProjectConfig, addonName string) error {
-	for key, property := range config.ParsedAddons[addonName].Properties {
-		if property.Required && ca.Properties[key] == nil {
-			return fmt.Errorf("property for key %s is required", key)
-		}
-		_, err := config.ParsedAddons[addonName].Properties[key].ParseValue(ca.Properties[key])
-		if err != nil {
-			return fmt.Errorf("property for key %s is invalid: %w", key, err)
-		}
-	}
-	return nil
-}
+var (
+	_ AddonHandler = &Cluster{}
+)
 
 type Cluster struct {
 	Name       string                   `json:"-"`
@@ -59,6 +44,16 @@ func (c *Cluster) DisableAddon(addon string) {
 		return
 	}
 	c.Addons[addon].Enabled = false
+}
+
+// GetAddons returns the cluster addons
+func (c *Cluster) GetAddons() ClusterAddons {
+	return c.Addons
+}
+
+// GetAddon returns the addon by name
+func (c *Cluster) GetAddon(name string) *ClusterAddon {
+	return c.Addons[name]
 }
 
 // Render renders the cluster configuration using the given project templates
@@ -109,20 +104,6 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 		})
 		if err != nil {
 			return fmt.Errorf("failed to render addon: %s, Error: %w", addonName, err)
-		}
-	}
-	return nil
-}
-
-func (c *Cluster) AllRequiredPropertiesSet(config *ProjectConfig) error {
-	for addonName, addon := range c.Addons {
-		if !addon.Enabled {
-			// skip disabled addons
-			continue
-		}
-		err := addon.AllRequiredPropertiesSet(config, addonName)
-		if err != nil {
-			return fmt.Errorf("failed to validate properties for addon %s: %w", addonName, err)
 		}
 	}
 	return nil
