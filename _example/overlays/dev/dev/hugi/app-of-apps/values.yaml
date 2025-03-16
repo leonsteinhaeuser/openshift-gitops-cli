@@ -1,0 +1,58 @@
+---
+appSuffix: "hugi-dev"
+appSourceBasePath: overlays/dev/dev/hugi/cluster-config
+
+default:
+  app:
+    annotations:
+      argocd.argoproj.io/compare-options: IgnoreExtraneous
+    enabled: true
+    enableAutoSync: true
+    autoSyncPrune: true
+    project: hub
+    destination:
+      namespace: openshift-gitops
+      server: https://kubernetes.default.svc
+    source:
+      repoURL: https://git.external.url/repo/name.git
+      targetRevision: develop
+
+projects:
+  hub:
+    annotations:
+      argocd.argoproj.io/sync-wave: "-2"
+    description: Project for cluster hub
+    namespace: openshift-gitops
+    sourceRepos:
+      - https://git.external.url/repo/name.git
+    destinations: |
+      - namespace: '*'
+        server: https://kubernetes.default.svc
+    extraFields: |
+      clusterResourceWhitelist:
+      - group: '*'
+        kind: '*'
+
+applications:
+  kyverno:
+    annotations:
+      {}
+    source:
+      path: kyverno
+    labels:
+      app.kubernetes.io/managed-by: argocd
+  monitoring:
+    annotations:
+      {}
+    source:
+      path: monitoring
+    labels:
+      app.kubernetes.io/managed-by: argocd
+-by: argocd
+  monitoring:
+    annotations:
+      {}
+    source:
+      path: monitoring
+    labels:
+      app.kubernetes.io/managed-by: argocd

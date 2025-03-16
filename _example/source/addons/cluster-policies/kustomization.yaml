@@ -1,0 +1,8 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - config/abc.yaml
+  {{- if .Properties.enableNetworkPolicies}}
+  - "../../../../../../base/base-config/cluster-policies/"
+  {{- end}}

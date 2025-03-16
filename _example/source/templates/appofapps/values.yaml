@@ -1,0 +1,45 @@
+---
+appSuffix: "{{ .ClusterName }}-{{ .Stage }}"
+appSourceBasePath: overlays/{{ .Environment }}/{{ .Stage }}/{{ .ClusterName }}/cluster-config
+
+default:
+  app:
+    annotations:
+      argocd.argoproj.io/compare-options: IgnoreExtraneous
+    enabled: true
+    enableAutoSync: true
+    autoSyncPrune: true
+    project: hub
+    destination:
+      namespace: {{ .Properties.destinationNamespace }}
+      server: {{ .Properties.destinationServer }}
+    source:
+      repoURL: {{ .Properties.gitURL }}
+      targetRevision: {{ .Properties.gitTargetRevision }}
+
+projects:
+  hub:
+    annotations:
+      argocd.argoproj.io/sync-wave: "-2"
+    description: Project for cluster hub
+    namespace: openshift-gitops
+    sourceRepos:
+      - {{ .Properties.gitURL }}
+    destinations: |
+      - namespace: '*'
+        server: {{ .Properties.destinationServer }}
+    extraFields: |
+      clusterResourceWhitelist:
+      - group: '*'
+        kind: '*'
+
+applications:
+  {{- range $key, $value := .Addons }}
+  {{ $key }}:
+    annotations:
+    {{- $value.Annotations | toYaml | nindent 6 }}
+    source:
+      path: {{ $key }}
+    labels:
+      app.kubernetes.io/managed-by: argocd
+  {{- end }}

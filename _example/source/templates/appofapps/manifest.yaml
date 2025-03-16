@@ -1,0 +1,13 @@
+name: app-of-apps
+properties:
+  gitURL:
+    required: true
+    default: ""
+    descriptionL: "Please define the git URL ArgoCD should reference"
+  targetRevision:
+    required: false
+    default: "develop"
+    description: "Please define the git target revision ArgoCD should reference"
+files:
+  - values.yaml
+  - kustomization.yaml

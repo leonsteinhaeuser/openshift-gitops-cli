@@ -1,0 +1,23 @@
+name: disco-operator
+group: cluster-policies
+annotations:
+  argocd.argoproj.io/sync-wave: "0"
+properties:
+  isSuperCool:
+    required: false
+    default: false
+    type: bool
+    description: "Is this app super cool?"
+  second:
+    required: true
+    default: "Hello World"
+    type: string
+    description: "Second?"
+  requiredDefaultNotSet:
+    required: true
+    default: null
+    type: int
+    description: "An empty property that is required"
+files:
+  - kustomization.yaml
+  - patch.yaml
