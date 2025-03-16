@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/k0kubun/pp/v3"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/cli"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/project"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
@@ -36,28 +37,68 @@ func (e *environmentMenu) menuCreateEnvironment() (*project.Environment, error) 
 		Name:       env,
 		Stages:     map[string]*project.Stage{},
 		Properties: map[string]string{},
+		Addons:     map[string]*project.ClusterAddon{},
 	}
 
-	// ask for properties
-	properties, err := e.menuEnvironmentProperties(environment)
+	err = e.menuSettings(environment)
 	if err != nil {
 		return nil, err
 	}
-	environment.Properties = properties
 
 	return environment, nil
 }
 
 func (e *environmentMenu) menuUpdateEnvironment(envName string) (*project.Environment, error) {
-	environment := *e.config.Environments[envName]
+	environment := e.config.Environments[envName]
 	environment.Name = envName
-	// ask for properties
-	properties, err := e.menuEnvironmentProperties(&environment)
+	if environment.Addons == nil {
+		environment.Addons = map[string]*project.ClusterAddon{}
+	}
+	err := e.menuSettings(environment)
 	if err != nil {
 		return nil, err
 	}
-	environment.Properties = properties
-	return &environment, nil
+	fmt.Println("Updated Environment")
+	pp.Println(environment)
+	return environment, nil
+}
+
+// menuSettings creates a context menu to manage the settings of a cluster
+func (e *environmentMenu) menuSettings(environment *project.Environment) error {
+	for {
+		prompt := promptui.Select{
+			Label: "Settings",
+			Items: []string{"Addons", "Properties", "Done"},
+		}
+		_, result, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+
+		switch result {
+		case "Addons":
+			addon := addonClusterMenu{
+				writer: e.writer,
+				reader: e.reader,
+				config: e.config,
+			}
+			pp.Println(environment)
+			err := addon.menuManageAddons(environment)
+			if err != nil {
+				return err
+			}
+		case "Properties":
+			properties, err := e.menuEnvironmentProperties(environment)
+			if err != nil {
+				return err
+			}
+			environment.Properties = properties
+		case "Done":
+			return nil
+		default:
+			return fmt.Errorf("invalid option %s", result)
+		}
+	}
 }
 
 func (e *environmentMenu) menuDeleteEnvironment(envName string) (*project.Environment, error) {
@@ -74,13 +115,11 @@ func (e *environmentMenu) menuDeleteEnvironment(envName string) (*project.Enviro
 }
 
 func (e *environmentMenu) menuEnvironmentProperties(env *project.Environment) (map[string]string, error) {
-	envProperties := map[string]string{}
+	envProperties := env.Properties
 	for {
-		properties := utils.MergeMaps(env.Properties, envProperties)
-
 		prompt := promptui.SelectWithAdd{
 			Label:    "Properties",
-			Items:    append(utils.SortStringSlice(utils.MapKeysToList(properties)), "Done"),
+			Items:    append(utils.SortStringSlice(utils.MapKeysToList(envProperties)), "Done"),
 			AddLabel: "Create Property",
 		}
 		_, result, err := prompt.Run()
@@ -95,7 +134,7 @@ func (e *environmentMenu) menuEnvironmentProperties(env *project.Environment) (m
 			break
 		}
 
-		val, err := cli.StringQuestion(e.writer, e.reader, "Property Value", properties[result], func(s string) error {
+		val, err := cli.StringQuestion(e.writer, e.reader, "Property Value", envProperties[result], func(s string) error {
 			if s == "" {
 				return fmt.Errorf("property value cannot be empty")
 			}
