@@ -88,7 +88,7 @@ func TestProjectConfig_HasCluster(t *testing.T) {
 	}
 }
 
-func TestProjectConfig_Cluster(t *testing.T) {
+func TestProjectConfig_GetCluster(t *testing.T) {
 	type fields struct {
 		BasePath         string
 		TemplateBasePath string
@@ -172,10 +172,10 @@ func TestProjectConfig_Cluster(t *testing.T) {
 				Environments:     tt.fields.Environments,
 			}
 
-			got := p.Cluster(tt.args.env, tt.args.stage, tt.args.cluster)
+			got := p.GetCluster(tt.args.env, tt.args.stage, tt.args.cluster)
 			diff := cmp.Diff(got, tt.want)
 			if diff != "" {
-				t.Errorf("ProjectConfig.Cluster() mismatch (-got +want):\n%s", diff)
+				t.Errorf("ProjectConfig.GetCluster() mismatch (-got +want):\n%s", diff)
 				return
 			}
 		})
@@ -241,7 +241,7 @@ func TestProjectConfig_SetCluster(t *testing.T) {
 			}
 			p.SetCluster(tt.args.env, tt.args.stage, tt.args.cluster)
 
-			diff := cmp.Diff(p.Environments[tt.args.env].Stages[tt.args.stage].Clusters[tt.args.cluster.Name], tt.want)
+			diff := cmp.Diff(p.GetCluster(tt.args.env, tt.args.stage, tt.args.cluster.Name), tt.want)
 			if diff != "" {
 				t.Errorf("ProjectConfig.SetCluster() mismatch (-got +want):\n%s", diff)
 				return
@@ -327,7 +327,7 @@ func TestProjectConfig_DeleteCluster(t *testing.T) {
 			}
 			p.DeleteCluster(tt.args.env, tt.args.stage, tt.args.cluster)
 
-			diff := cmp.Diff(p.Environments[tt.args.env].Stages[tt.args.stage].Clusters, tt.want)
+			diff := cmp.Diff(p.GetStage(tt.args.env, tt.args.stage).Clusters, tt.want)
 			if diff != "" {
 				t.Errorf("ProjectConfig.DeleteCluster() mismatch (-got +want):\n%s", diff)
 				return

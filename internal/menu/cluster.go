@@ -87,7 +87,7 @@ func (c *clusterMenu) menuSettings(env, stage string, cluster *project.Cluster) 
 
 // menuUpdateCluster creates a context menu to update an existing cluster
 func (c *clusterMenu) menuUpdateCluster(envName, stageName, clusterName string) (*project.Cluster, error) {
-	cluster := c.config.Cluster(envName, stageName, clusterName)
+	cluster := c.config.GetCluster(envName, stageName, clusterName)
 	if cluster.Name == "" {
 		cluster.Name = clusterName
 	}
@@ -108,7 +108,7 @@ func (c *clusterMenu) menuDeleteCluster(env, stage, cluster string) (*project.Cl
 	if !confirmation {
 		return nil, fmt.Errorf("confirmation denied")
 	}
-	return c.config.Cluster(env, stage, cluster), nil
+	return c.config.GetCluster(env, stage, cluster), nil
 }
 
 func (c *clusterMenu) menuClusterSettingsProperties(env, stage string, cluster *project.Cluster) (map[string]string, error) {

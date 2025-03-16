@@ -23,7 +23,7 @@ func (e *environmentMenu) menuCreateEnvironment() (*project.Environment, error) 
 		if s == "" {
 			return fmt.Errorf("environment name cannot be empty")
 		}
-		if _, ok := e.config.Environments[s]; ok {
+		if e.config.HasEnvironment(s) {
 			return fmt.Errorf("environment already exists")
 		}
 		return nil
@@ -48,8 +48,7 @@ func (e *environmentMenu) menuCreateEnvironment() (*project.Environment, error) 
 }
 
 func (e *environmentMenu) menuUpdateEnvironment(envName string) (*project.Environment, error) {
-	environment := e.config.Environments[envName]
-	environment.Name = envName
+	environment := e.config.GetEnvironment(envName)
 	if environment.Addons == nil {
 		environment.Addons = map[string]*project.ClusterAddon{}
 	}
@@ -105,9 +104,9 @@ func (e *environmentMenu) menuDeleteEnvironment(envName string) (*project.Enviro
 	if !confirmation {
 		return nil, fmt.Errorf("confirmation denied")
 	}
-	environment := *e.config.Environments[envName]
+	environment := e.config.GetEnvironment(envName)
 	environment.Name = envName
-	return &environment, errors.New("menuDeleteEnvironment not implemented")
+	return environment, errors.New("menuDeleteEnvironment not implemented")
 }
 
 func (e *environmentMenu) menuEnvironmentProperties(env *project.Environment) (map[string]string, error) {

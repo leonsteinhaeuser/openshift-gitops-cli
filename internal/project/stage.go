@@ -50,3 +50,8 @@ func (s *Stage) GetAddons() ClusterAddons {
 func (s *Stage) GetAddon(name string) *ClusterAddon {
 	return s.Addons[name]
 }
+
+// GetCluster returns the cluster by name
+func (s *Stage) GetCluster(name string) *Cluster {
+	return s.Clusters[name]
+}

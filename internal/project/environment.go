@@ -50,3 +50,14 @@ func (e *Environment) GetAddons() ClusterAddons {
 func (e *Environment) GetAddon(name string) *ClusterAddon {
 	return e.Addons[name]
 }
+
+// HasStage checks if a stage exists in the environment
+func (e *Environment) HasStage(name string) bool {
+	_, ok := e.Stages[name]
+	return ok
+}
+
+// GetStage returns the stage by name
+func (e *Environment) GetStage(name string) *Stage {
+	return e.Stages[name]
+}
