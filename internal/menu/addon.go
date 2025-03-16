@@ -17,12 +17,12 @@ type addonClusterMenu struct {
 	config *project.ProjectConfig
 }
 
-func (a *addonClusterMenu) menuManageAddons(cluster *project.Cluster) error {
+func (a *addonClusterMenu) menuManageAddons(ah project.AddonHandler) error {
 	for {
 		prompt := promptui.Select{
 			Label:     "Manage Addons",
 			Items:     append(utils.SortStringSlice(utils.MapKeysToList(a.config.ParsedAddons)), "Done"),
-			Templates: a.templateManageAddons(cluster),
+			Templates: a.templateManageAddons(ah),
 			Size:      10,
 		}
 		_, result, err := prompt.Run()
@@ -30,15 +30,16 @@ func (a *addonClusterMenu) menuManageAddons(cluster *project.Cluster) error {
 			return err
 		}
 		if result == "Done" {
-			err := cluster.AllRequiredPropertiesSet(a.config)
+			err := ah.GetAddons().AllRequiredPropertiesSet(a.config)
 			if err != nil {
 				fmt.Println("Not all required properties are set", err)
 				continue
 			}
+			fmt.Println("Done managing addons")
 			break
 		}
 
-		err = a.menuAddonSettings(cluster, result)
+		err = a.menuAddonSettings(ah, result)
 		if err != nil {
 			return err
 		}
@@ -46,7 +47,7 @@ func (a *addonClusterMenu) menuManageAddons(cluster *project.Cluster) error {
 	return nil
 }
 
-func (a *addonClusterMenu) templateManageAddons(cluster *project.Cluster) *promptui.SelectTemplates {
+func (a *addonClusterMenu) templateManageAddons(ah project.AddonHandler) *promptui.SelectTemplates {
 	return &promptui.SelectTemplates{
 		Label:   "{{ . }}",
 		Details: "{{ addon . }}",
@@ -59,7 +60,7 @@ func (a *addonClusterMenu) templateManageAddons(cluster *project.Cluster) *promp
 				resultString := "--------------------------------\nDetails:\n"
 				resultString += fmt.Sprintf("\tDescription: %s\n", a.config.ParsedAddons[addonName].Description)
 				resultString += fmt.Sprintf("\tGroup: %s\n", a.config.ParsedAddons[addonName].Group)
-				resultString += fmt.Sprintf("\tEnabled: %v | Default: %v\n", cluster.IsAddonEnabled(addonName), a.config.Addons[addonName].DefaultEnabled)
+				resultString += fmt.Sprintf("\tEnabled: %v | Default: %v\n", ah.GetAddon(addonName).IsEnabled(), a.config.Addons[addonName].DefaultEnabled)
 				return resultString
 			}
 			return funcmap
@@ -67,10 +68,10 @@ func (a *addonClusterMenu) templateManageAddons(cluster *project.Cluster) *promp
 	}
 }
 
-func (a *addonClusterMenu) menuAddonSettings(cluster *project.Cluster, addon string) error {
+func (a *addonClusterMenu) menuAddonSettings(ah project.AddonHandler, addon string) error {
 	for {
 		selectOptions := []string{"Enable", "Done"}
-		if (*cluster).IsAddonEnabled(addon) {
+		if ah.IsAddonEnabled(addon) {
 			selectOptions = []string{"Disable", "Settings", "Done"}
 		}
 
@@ -85,25 +86,23 @@ func (a *addonClusterMenu) menuAddonSettings(cluster *project.Cluster, addon str
 
 		switch result {
 		case "Enable":
-			fmt.Println("Enable addon", addon)
-			cluster.EnableAddon(addon)
+			ah.EnableAddon(addon)
 		case "Disable":
-			fmt.Println("Disable addon", addon)
-			cluster.DisableAddon(addon)
+			ah.DisableAddon(addon)
 		case "Settings":
-			err := a.menuAddonProperties(cluster, addon)
+			err := a.menuAddonProperties(ah, addon)
 			if err != nil {
 				return err
 			}
 		case "Done":
-			if !(*cluster).IsAddonEnabled(addon) {
+			if !ah.IsAddonEnabled(addon) {
 				return nil
 			}
 
 			// check if all required properties are set
-			err := cluster.Addons[addon].AllRequiredPropertiesSet(a.config, addon)
+			err := ah.GetAddon(addon).AllRequiredPropertiesSet(a.config, addon)
 			if err != nil {
-				fmt.Println("Not all required properties are set", err)
+				fmt.Println(utils.Red.Wrap("Not all required properties are set"), err)
 				continue
 			}
 			return nil
@@ -113,13 +112,13 @@ func (a *addonClusterMenu) menuAddonSettings(cluster *project.Cluster, addon str
 	}
 }
 
-func (a *addonClusterMenu) menuAddonProperties(cluster *project.Cluster, addon string) error {
+func (a *addonClusterMenu) menuAddonProperties(ah project.AddonHandler, addon string) error {
 	for {
 		prompt := promptui.Select{
 			Label: "Properties",
 			Items: append(utils.SortStringSlice(utils.MapKeysToList(a.config.ParsedAddons[addon].Properties)), "Done"),
 			// TODO: add template to display property options
-			Templates: a.menuTemplateAddonProperties(cluster, addon),
+			Templates: a.menuTemplateAddonProperties(ah, addon),
 		}
 		_, result, err := prompt.Run()
 		if err != nil {
@@ -129,32 +128,29 @@ func (a *addonClusterMenu) menuAddonProperties(cluster *project.Cluster, addon s
 			break
 		}
 
-		value, err := cli.UntypedQuestion(a.writer, a.reader, "Value", cluster.Addons[addon].Properties[result], func(s any) error {
+		value, err := cli.UntypedQuestion(a.writer, a.reader, "Value", fmt.Sprintf("%v", ah.GetAddon(addon).Properties[result]), func(s any) error {
 			if s == nil {
 				return fmt.Errorf("value cannot be empty")
 			}
 			return nil
 		})
 		if err != nil {
-			fmt.Println("Value violates requirements, please try again", err)
+			fmt.Println(utils.Red.Wrap("Value violates requirements, please try again"), err)
 			continue
-		}
-		if cluster.Addons[addon].Properties == nil {
-			cluster.Addons[addon].Properties = map[string]any{}
 		}
 
 		value, err = a.config.ParsedAddons[addon].Properties[result].ParseValue(value)
 		if err != nil {
-			fmt.Println("Value violates requirements, please try again", err)
+			fmt.Println(utils.Red.Wrap("Value violates requirements, please try again"), err)
 			continue
 		}
-		cluster.Addons[addon].Properties[result] = value
+		ah.GetAddon(addon).SetProperty(result, value)
 	}
 	return nil
 }
 
 // menuTemplateAddonProperties returns a promptui.SelectTemplates for the addon properties
-func (a *addonClusterMenu) menuTemplateAddonProperties(cluster *project.Cluster, addon string) *promptui.SelectTemplates {
+func (a *addonClusterMenu) menuTemplateAddonProperties(ah project.AddonHandler, addon string) *promptui.SelectTemplates {
 	return &promptui.SelectTemplates{
 		Label:   "{{ . }}",
 		Details: "{{ properties . }}",
@@ -169,7 +165,7 @@ func (a *addonClusterMenu) menuTemplateAddonProperties(cluster *project.Cluster,
 				resultString += fmt.Sprintf("\tRequired: %v\n", a.config.ParsedAddons[addon].Properties[selectValue].Required)
 				resultString += fmt.Sprintf("\tType: %v\n", a.config.ParsedAddons[addon].Properties[selectValue].Type)
 				resultString += fmt.Sprintf("\tDefault: %v\n", a.config.ParsedAddons[addon].Properties[selectValue].Default)
-				data := cluster.Addons[addon].Properties[selectValue]
+				data := ah.GetAddon(addon).Properties[selectValue]
 				if data == nil {
 					data = a.config.ParsedAddons[addon].Properties[selectValue].Default
 				}
