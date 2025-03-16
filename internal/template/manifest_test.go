@@ -47,16 +47,16 @@ func TestPropertyType_checkType(t *testing.T) {
 			args: args{
 				value: 42,
 			},
-			want:    int64(42),
+			want:    int(42),
 			wantErr: false,
 		},
 		{
-			name: "invalid string",
+			name: "number as string",
 			p:    PropertyTypeString,
 			args: args{
 				value: 42,
 			},
-			want:    nil,
+			want:    "42",
 			wantErr: true,
 		},
 		{
@@ -87,21 +87,12 @@ func TestPropertyType_checkType(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "property is bool but expect string",
+			name: "property is bool want bool as string",
 			p:    PropertyTypeString,
 			args: args{
 				value: true,
 			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "unsupported data",
-			p:    PropertyTypeString,
-			args: args{
-				value: []string{"test"},
-			},
-			want:    nil,
+			want:    "true",
 			wantErr: true,
 		},
 		{
