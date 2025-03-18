@@ -56,7 +56,7 @@ func TestPropertyType_checkType(t *testing.T) {
 			args: args{
 				value: 42,
 			},
-			want:    "42",
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -92,7 +92,7 @@ func TestPropertyType_checkType(t *testing.T) {
 			args: args{
 				value: true,
 			},
-			want:    "true",
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -110,6 +110,9 @@ func TestPropertyType_checkType(t *testing.T) {
 			got, err := tt.p.checkType(tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("PropertyType.checkType() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
 				return
 			}
 			diff := cmp.Diff(got, tt.want)

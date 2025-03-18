@@ -48,7 +48,11 @@ func (p PropertyType) checkType(value any) (any, error) {
 	typeValue := reflect.ValueOf(value)
 	switch p {
 	case PropertyTypeString:
-		return typeValue.String(), nil
+		v, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("expected type %s, got %v", p, kind)
+		}
+		return v, nil
 	case PropertyTypeBool:
 		if kind == reflect.String {
 			bl, err := strconv.ParseBool(typeValue.String())
