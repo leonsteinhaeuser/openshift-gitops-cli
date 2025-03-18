@@ -1,0 +1,12 @@
+name: cluster-policies
+group: cluster-policies
+annotations:
+  argocd.argoproj.io/sync-wave: "0"
+properties:
+  enableNetworkPolicies:
+    required: false
+    default: false
+    type: bool
+    description: "Whether to enable the cluster wide network policies"
+files:
+  - ./

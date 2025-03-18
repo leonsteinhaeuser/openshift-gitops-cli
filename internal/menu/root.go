@@ -67,7 +67,7 @@ func RootMenu(config *project.ProjectConfig, eventCh chan<- Event) error {
 				}
 
 				eventCh <- newPreUpdateEvent(EventOriginEnvironment, environment.Name, "", "")
-				config.Environments[*env].Properties = environment.Properties
+				config.GetEnvironment(environment.Name).Properties = environment.Properties
 				eventCh <- newPostUpdateEvent(EventOriginEnvironment, environment.Name, "", "")
 				return nil
 			}
@@ -110,7 +110,7 @@ func RootMenu(config *project.ProjectConfig, eventCh chan<- Event) error {
 
 				eventCh <- newPreCreateEvent(EventOriginStage, *envName, stage.Name, "")
 				// add stage to config
-				config.Environments[*envName].Stages[stage.Name] = stage
+				config.GetEnvironment(*envName).Stages[stage.Name] = stage
 				eventCh <- newPostCreateEvent(EventOriginStage, *envName, stage.Name, "")
 				return nil
 			}
@@ -128,9 +128,9 @@ func RootMenu(config *project.ProjectConfig, eventCh chan<- Event) error {
 
 				eventCh <- newPreUpdateEvent(EventOriginStage, *envName, *stageName, "")
 				// update stage in config
-				config.Environments[*envName].Stages[stage.Name] = stage
+				config.GetEnvironment(*envName).Stages[stage.Name] = stage
 				eventCh <- newPostUpdateEvent(EventOriginStage, *envName, stage.Name, "")
-				return errors.New("stage update not implemented")
+				return nil
 			}
 
 			delete := func() error {
@@ -295,7 +295,7 @@ func menuSelectEnvironment(config *project.ProjectConfig) (*string, error) {
 func menuSelectStage(config *project.ProjectConfig, environment string) (*string, error) {
 	prompt := promptui.Select{
 		Label: "Select Stage",
-		Items: append(utils.MapKeysToList(config.Environments[environment].Stages), rootOptionDone),
+		Items: append(utils.MapKeysToList(config.GetEnvironment(environment).Stages), rootOptionDone),
 	}
 	_, result, err := prompt.Run()
 	if err != nil {
@@ -329,7 +329,7 @@ func menuHierarchySelectEnvironmentStage(config *project.ProjectConfig) (*string
 func menuSelectCluster(config *project.ProjectConfig, environment, stage string) (*string, error) {
 	prompt := promptui.Select{
 		Label: "Select Cluster",
-		Items: append(utils.MapKeysToList(config.Environments[environment].Stages[stage].Clusters), rootOptionDone),
+		Items: append(utils.MapKeysToList(config.GetStage(environment, stage).Clusters), rootOptionDone),
 	}
 	_, result, err := prompt.Run()
 	if err != nil {

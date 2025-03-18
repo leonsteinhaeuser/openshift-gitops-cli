@@ -1,0 +1,7 @@
+name: kyverno
+group: cluster-policies
+annotations:
+  argocd.argoproj.io/sync-wave: "0"
+properties: {}
+files:
+  - ./

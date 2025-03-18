@@ -47,16 +47,16 @@ func TestPropertyType_checkType(t *testing.T) {
 			args: args{
 				value: 42,
 			},
-			want:    42,
+			want:    int(42),
 			wantErr: false,
 		},
 		{
-			name: "invalid string",
+			name: "number as string",
 			p:    PropertyTypeString,
 			args: args{
 				value: 42,
 			},
-			want:    nil,
+			want:    "",
 			wantErr: true,
 		},
 		{
@@ -86,6 +86,24 @@ func TestPropertyType_checkType(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+		{
+			name: "property is bool want bool as string",
+			p:    PropertyTypeString,
+			args: args{
+				value: true,
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "nil value",
+			p:    PropertyTypeString,
+			args: args{
+				value: nil,
+			},
+			want:    nil,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -94,8 +112,12 @@ func TestPropertyType_checkType(t *testing.T) {
 				t.Errorf("PropertyType.checkType() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("PropertyType.checkType() = %v, want %v", got, tt.want)
+			if tt.wantErr {
+				return
+			}
+			diff := cmp.Diff(got, tt.want)
+			if diff != "" {
+				t.Errorf("PropertyType.checkType() mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}

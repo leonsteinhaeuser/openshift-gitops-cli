@@ -1,0 +1,76 @@
+addons:
+  cluster-policies:
+    defaultEnabled: true
+    group: cluster-configs/policies
+    path: _example/source/addons/cluster-policies
+  disco-operator:
+    defaultEnabled: true
+    group: cluster-configs/policies
+    path: _example/source/addons/disco-operator
+  kyverno:
+    defaultEnabled: true
+    group: cluster-configs
+    path: _example/source/addons/kyverno
+  monitoring:
+    defaultEnabled: false
+    group: cluster-configs
+    path: _example/source/addons/monitoring
+basePath: _example/overlays
+environments:
+  dev:
+    actions:
+      postCreateHooks: null
+      postUpdateHooks: null
+      preCreateHooks: null
+      preUpdateHooks: null
+    addons:
+      cluster-policies:
+        enabled: true
+        properties:
+          enableNetworkPolicies: true
+      disco-operator:
+        enabled: true
+        properties:
+          isSuperCool: true
+          requiredDefaultNotSet: 10
+          second: Hello World
+    properties:
+      gitBranch: develop
+      gitURL: https://github.com/leonsteinhaeuser/openshift-gitops-cli.git
+    stages:
+      dev:
+        actions:
+          postCreateHooks: null
+          postUpdateHooks: null
+          preCreateHooks: null
+          preUpdateHooks: null
+        addons:
+          cluster-policies:
+            enabled: true
+            properties:
+              enableNetworkPolicies: false
+        clusters:
+          hugi:
+            addons:
+              cluster-policies:
+                enabled: true
+                properties:
+                  enableNetworkPolicies: true
+              disco-operator:
+                enabled: true
+                properties:
+                  isSuperCool: false
+                  requiredDefaultNotSet: null
+                  second: Hello World
+              kyverno:
+                enabled: true
+                properties: {}
+              monitoring:
+                enabled: true
+                properties:
+                  ingress_host: https://monitoring.2.external.url
+            properties:
+              destinationNamespace: openshift-gitops
+        properties:
+          destinationServer: https://kubernetes.default.svc
+templateBasePath: _example/source/templates

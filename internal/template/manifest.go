@@ -5,6 +5,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
+	"strconv"
 	"strings"
 
 	"sigs.k8s.io/yaml"
@@ -38,24 +40,45 @@ const (
 // checkType validates the given value against the property type
 // If the value is valid, it will be returned, otherwise an error is returned
 func (p PropertyType) checkType(value any) (any, error) {
-	switch v := value.(type) {
-	case string:
-		if p != PropertyTypeString {
-			return nil, fmt.Errorf("expected type %s, got string", p)
+	if value == nil {
+		return nil, nil
+	}
+
+	kind := reflect.TypeOf(value).Kind()
+	typeValue := reflect.ValueOf(value)
+	switch p {
+	case PropertyTypeString:
+		v, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("expected type %s, got %v", p, kind)
 		}
 		return v, nil
-	case bool:
-		if p != PropertyTypeBool {
-			return nil, fmt.Errorf("expected type %s, got bool", p)
+	case PropertyTypeBool:
+		if kind == reflect.String {
+			bl, err := strconv.ParseBool(typeValue.String())
+			if err != nil {
+				return nil, err
+			}
+			return bl, nil
 		}
-		return v, nil
-	case int:
-		if p != PropertyTypeInt {
-			return nil, fmt.Errorf("expected type %s, got int", p)
+		if kind == reflect.Bool {
+			return value, nil
 		}
-		return v, nil
+		return nil, fmt.Errorf("expected type %s, got %v", p, kind)
+	case PropertyTypeInt:
+		if kind == reflect.String {
+			i, err := strconv.Atoi(typeValue.String())
+			if err != nil {
+				return nil, err
+			}
+			return i, nil
+		}
+		if kind == reflect.Int {
+			return value, nil
+		}
+		return nil, fmt.Errorf("expected type %s, got %v", p, kind)
 	default:
-		return nil, fmt.Errorf("unsupported type %T", v)
+		return nil, fmt.Errorf("expected type %s, got %v", p, reflect.TypeOf(value).Kind())
 	}
 }
 

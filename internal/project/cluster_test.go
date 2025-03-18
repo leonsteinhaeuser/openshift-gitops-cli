@@ -1,350 +1,12 @@
 package project
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/template"
 )
-
-func TestClusterAddon_AllRequiredPropertiesSet(t *testing.T) {
-	type fields struct {
-		Enabled    bool
-		Properties map[string]any
-	}
-	type args struct {
-		config    *ProjectConfig
-		addonName string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "no properties defined in addon properties",
-			fields: fields{
-				Properties: map[string]any{},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: true,
-		},
-		{
-			name: "one property set",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": true,
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: false,
-		},
-		{
-			name: "one property set string, expect bool",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": "invalid",
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: true,
-		},
-		{
-			name: "one property set int, expect bool",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": 10,
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: true,
-		},
-		{
-			name: "one property set bool, expect string",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": true,
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeString,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: true,
-		},
-		{
-			name: "one property set int, expect string",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": 10,
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeString,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: true,
-		},
-		{
-			name: "one property set string, expect string",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": "value",
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeString,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: false,
-		},
-		{
-			name: "one property set int, expect int",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": 10,
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeInt,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: false,
-		},
-		{
-			name: "one property set string, expect int",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": "value",
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeInt,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: true,
-		},
-		{
-			name: "one property set int, expect int",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": 10,
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeInt,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: false,
-		},
-		{
-			name: "one property set int, expect int, invalid value",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": "invalid",
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeInt,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: true,
-		},
-		{
-			name: "one property set int, expect int, invalid value",
-			fields: fields{
-				Properties: map[string]any{
-					"property1": "invalid",
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeInt,
-									Description: "property1",
-								},
-							},
-						},
-					},
-				},
-				addonName: "addon1",
-			},
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ca := &ClusterAddon{
-				Enabled:    tt.fields.Enabled,
-				Properties: tt.fields.Properties,
-			}
-			if err := ca.AllRequiredPropertiesSet(tt.args.config, tt.args.addonName); (err != nil) != tt.wantErr {
-				t.Errorf("ClusterAddon.AllRequiredPropertiesSet() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
 
 func TestCluster_IsAddonEnabled(t *testing.T) {
 	type fields struct {
@@ -713,263 +375,59 @@ func TestCluster_DisableAddon(t *testing.T) {
 	}
 }
 
-func TestCluster_AllRequiredPropertiesSet(t *testing.T) {
+func TestCluster_GetAddons(t *testing.T) {
 	type fields struct {
 		Name       string
 		Addons     map[string]*ClusterAddon
 		Properties map[string]string
 	}
-	type args struct {
-		config *ProjectConfig
-	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name   string
+		fields fields
+		want   ClusterAddons
 	}{
 		{
-			name: "one addon, no properties in cluster",
+			name: "no addons",
 			fields: fields{
-				Addons: map[string]*ClusterAddon{
-					"addon1": {
-						Enabled:    true,
-						Properties: map[string]any{},
-					},
-				},
+				Addons: map[string]*ClusterAddon{},
 			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							BasePath:    "examples/addons/addon1",
-							Name:        "addon1",
-							Description: "addon1",
-							Group:       "group1",
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-							Annotations: map[string]string{},
-							Files:       []string{},
-						},
-					},
-					Addons: map[string]Addon{
-						"addon1": {
-							Name:           "addon1",
-							Group:          "group1",
-							DefaultEnabled: true,
-							Path:           "examples/addons/addon1",
-						},
-					},
-				},
-			},
-			wantErr: true,
+			want: map[string]*ClusterAddon{},
 		},
 		{
-			name: "one addon, with properties in cluster but wrong type",
+			name: "one addon",
 			fields: fields{
 				Addons: map[string]*ClusterAddon{
 					"addon1": {
 						Enabled: true,
-						Properties: map[string]any{
-							"property1": "invalid",
-						},
 					},
 				},
 			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							BasePath:    "examples/addons/addon1",
-							Name:        "addon1",
-							Description: "addon1",
-							Group:       "group1",
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-							Annotations: map[string]string{},
-							Files:       []string{},
-						},
-					},
-					Addons: map[string]Addon{
-						"addon1": {
-							Name:           "addon1",
-							Group:          "group1",
-							DefaultEnabled: true,
-							Path:           "examples/addons/addon1",
-						},
-					},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled: true,
 				},
 			},
-			wantErr: true,
 		},
 		{
-			name: "one addon disabled, with properties in cluster but wrong type",
-			fields: fields{
-				Addons: map[string]*ClusterAddon{
-					"addon1": {
-						Enabled: false,
-						Properties: map[string]any{
-							"property1": "invalid",
-						},
-					},
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							BasePath:    "examples/addons/addon1",
-							Name:        "addon1",
-							Description: "addon1",
-							Group:       "group1",
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-							Annotations: map[string]string{},
-							Files:       []string{},
-						},
-					},
-					Addons: map[string]Addon{
-						"addon1": {
-							Name:           "addon1",
-							Group:          "group1",
-							DefaultEnabled: true,
-							Path:           "examples/addons/addon1",
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "one addon, with properties in cluster",
+			name: "two addons",
 			fields: fields{
 				Addons: map[string]*ClusterAddon{
 					"addon1": {
 						Enabled: true,
-						Properties: map[string]any{
-							"property1": true,
-						},
-					},
-				},
-			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							BasePath:    "examples/addons/addon1",
-							Name:        "addon1",
-							Description: "addon1",
-							Group:       "group1",
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-							Annotations: map[string]string{},
-							Files:       []string{},
-						},
-					},
-					Addons: map[string]Addon{
-						"addon1": {
-							Name:           "addon1",
-							Group:          "group1",
-							DefaultEnabled: true,
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "two addons, with properties in cluster",
-			fields: fields{
-				Addons: map[string]*ClusterAddon{
-					"addon1": {
-						Enabled: true,
-						Properties: map[string]any{
-							"property1": true,
-						},
 					},
 					"addon2": {
-						Enabled: true,
-						Properties: map[string]any{
-							"property1": true,
-						},
+						Enabled: false,
 					},
 				},
 			},
-			args: args{
-				config: &ProjectConfig{
-					ParsedAddons: map[string]template.TemplateManifest{
-						"addon1": {
-							BasePath:    "examples/addons/addon1",
-							Name:        "addon1",
-							Description: "addon1",
-							Group:       "group1",
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-							Annotations: map[string]string{},
-							Files:       []string{},
-						},
-						"addon2": {
-							BasePath:    "examples/addons/addon2",
-							Name:        "addon2",
-							Description: "addon2",
-							Group:       "group2",
-							Properties: map[string]template.Property{
-								"property1": {
-									Required:    true,
-									Default:     nil,
-									Type:        template.PropertyTypeBool,
-									Description: "property1",
-								},
-							},
-							Annotations: map[string]string{},
-							Files:       []string{},
-						},
-					},
-					Addons: map[string]Addon{
-						"addon1": {
-							Name:           "addon1",
-							Group:          "group1",
-							DefaultEnabled: true,
-						},
-						"addon2": {
-							Name:           "addon2",
-							Group:          "group2",
-							DefaultEnabled: true,
-						},
-					},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled: true,
+				},
+				"addon2": {
+					Enabled: false,
 				},
 			},
-			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
@@ -979,8 +437,589 @@ func TestCluster_AllRequiredPropertiesSet(t *testing.T) {
 				Addons:     tt.fields.Addons,
 				Properties: tt.fields.Properties,
 			}
-			if err := c.AllRequiredPropertiesSet(tt.args.config); (err != nil) != tt.wantErr {
-				t.Errorf("Cluster.AllRequiredPropertiesSet() error = %v, wantErr %v", err, tt.wantErr)
+			if got := c.GetAddons(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Cluster.GetAddons() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCluster_GetAddon(t *testing.T) {
+	type fields struct {
+		Name       string
+		Addons     map[string]*ClusterAddon
+		Properties map[string]string
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *ClusterAddon
+	}{
+		{
+			name: "no addons",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			args: args{
+				name: "addon1",
+			},
+			want: nil,
+		},
+		{
+			name: "one addon",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+					},
+				},
+			},
+			args: args{
+				name: "addon1",
+			},
+			want: &ClusterAddon{
+				Enabled: true,
+			},
+		},
+		{
+			name: "two addons",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+					},
+					"addon2": {
+						Enabled: false,
+					},
+				},
+			},
+			args: args{
+				name: "addon1",
+			},
+			want: &ClusterAddon{
+				Enabled: true,
+			},
+		},
+		{
+			name: "two addons no found",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+					},
+					"addon2": {
+						Enabled: false,
+					},
+				},
+			},
+			args: args{
+				name: "addon5",
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Cluster{
+				Name:       tt.fields.Name,
+				Addons:     tt.fields.Addons,
+				Properties: tt.fields.Properties,
+			}
+			if got := c.GetAddon(tt.args.name); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Cluster.GetAddon() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCluster_Render(t *testing.T) {
+	type fields struct {
+		Name       string
+		Addons     map[string]*ClusterAddon
+		Properties map[string]string
+	}
+	type args struct {
+		config *ProjectConfig
+		env    string
+		stage  string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Cluster{
+				Name:       tt.fields.Name,
+				Addons:     tt.fields.Addons,
+				Properties: tt.fields.Properties,
+			}
+			if err := c.Render(tt.args.config, tt.args.env, tt.args.stage); (err != nil) != tt.wantErr {
+				t.Errorf("Cluster.Render() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCluster_SetDefaultAddons(t *testing.T) {
+	type fields struct {
+		Name       string
+		Addons     map[string]*ClusterAddon
+		Properties map[string]string
+	}
+	type args struct {
+		config *ProjectConfig
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		args       args
+		wantAddons map[string]*ClusterAddon
+	}{
+		{
+			name: "one addon with bool property false",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     false,
+									Type:        template.PropertyTypeBool,
+									Description: "property1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAddons: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": false},
+				},
+			},
+		},
+		{
+			name: "one addon with bool property nil",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeBool,
+									Description: "property1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAddons: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": nil},
+				},
+			},
+		},
+		{
+			name: "one addon with int property 10",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     10,
+									Type:        template.PropertyTypeInt,
+									Description: "property1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAddons: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": 10},
+				},
+			},
+		},
+		{
+			name: "one addon with int property nil",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeInt,
+									Description: "property1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAddons: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": nil},
+				},
+			},
+		},
+		{
+			name: "one addon with string property 'Hello World'",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     "Hello World",
+									Type:        template.PropertyTypeString,
+									Description: "property1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAddons: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": "Hello World"},
+				},
+			},
+		},
+		{
+			name: "one addon with string property 'nil'",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     nil,
+									Type:        template.PropertyTypeString,
+									Description: "property1",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantAddons: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": nil},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Cluster{
+				Name:       tt.fields.Name,
+				Addons:     tt.fields.Addons,
+				Properties: tt.fields.Properties,
+			}
+			c.SetDefaultAddons(tt.args.config)
+
+			diff := cmp.Diff(tt.wantAddons, c.Addons)
+			if diff != "" {
+				t.Errorf("Cluster.SetDefaultAddons() mismatch (-want +got):\n%s", diff)
+				return
+			}
+		})
+	}
+}
+
+func TestCluster_AddonProperties(t *testing.T) {
+	type fields struct {
+		Name       string
+		Addons     map[string]*ClusterAddon
+		Properties map[string]string
+	}
+	type args struct {
+		config *ProjectConfig
+		env    string
+		stg    string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   map[string]*ClusterAddon
+	}{
+		{
+			name: "one addon, cluster has highest priority",
+			fields: fields{
+				Name: "cluster1",
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+						Properties: map[string]any{
+							"property1": "value1",
+						},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     "Hello World",
+									Type:        template.PropertyTypeString,
+									Description: "property1",
+								},
+							},
+						},
+					},
+					Environments: map[string]*Environment{
+						"env1": {
+							Stages: map[string]*Stage{
+								"stage1": {
+									Addons: map[string]*ClusterAddon{
+										"addon1": {
+											Enabled:    true,
+											Properties: map[string]any{},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				env: "env1",
+				stg: "stage1",
+			},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": "value1"},
+				},
+			},
+		},
+		{
+			name: "one addon, stage has highest priority",
+			fields: fields{
+				Name: "cluster1",
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled:    true,
+						Properties: map[string]any{},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     "Hello World",
+									Type:        template.PropertyTypeString,
+									Description: "property1",
+								},
+							},
+						},
+					},
+					Environments: map[string]*Environment{
+						"env1": {
+							Addons: map[string]*ClusterAddon{
+								"addon1": {
+									Enabled: true,
+									Properties: map[string]any{
+										"property1": "value1",
+									},
+								},
+							},
+							Stages: map[string]*Stage{
+								"stage1": {
+									Addons: map[string]*ClusterAddon{
+										"addon1": {
+											Enabled: true,
+											Properties: map[string]any{
+												"property1": "value1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				env: "env1",
+				stg: "stage1",
+			},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": "value1"},
+				},
+			},
+		},
+		{
+			name: "one addon, env has highest priority",
+			fields: fields{
+				Name: "cluster1",
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled:    true,
+						Properties: map[string]any{},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     "Hello World",
+									Type:        template.PropertyTypeString,
+									Description: "property1",
+								},
+							},
+						},
+					},
+					Environments: map[string]*Environment{
+						"env1": {
+							Addons: map[string]*ClusterAddon{
+								"addon1": {
+									Enabled: true,
+									Properties: map[string]any{
+										"property1": "value1",
+									},
+								},
+							},
+							Stages: map[string]*Stage{
+								"stage1": {
+									Addons: map[string]*ClusterAddon{},
+								},
+							},
+						},
+					},
+				},
+				env: "env1",
+				stg: "stage1",
+			},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": "value1"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Cluster{
+				Name:       tt.fields.Name,
+				Addons:     tt.fields.Addons,
+				Properties: tt.fields.Properties,
+			}
+			got := c.AddonProperties(tt.args.config, tt.args.env, tt.args.stg)
+			diff := cmp.Diff(tt.want, got)
+			if diff != "" {
+				t.Errorf("Cluster.AddonProperties() mismatch (-want +got):\n%s", diff)
+				return
 			}
 		})
 	}

@@ -22,29 +22,25 @@ type ProjectConfig struct {
 
 // HasCluster checks if a cluster exists in the given environment and stage
 func (p ProjectConfig) HasCluster(env, stage, cluster string) bool {
-	_, ok := p.Environments[env].Stages[stage].Clusters[cluster]
+	_, ok := p.GetStage(env, stage).Clusters[cluster]
 	return ok
-}
-
-func (p ProjectConfig) Cluster(env, stage, cluster string) *Cluster {
-	return p.Environments[env].Stages[stage].Clusters[cluster]
 }
 
 // SetCluster sets the cluster for the given environment and stage
 func (p *ProjectConfig) SetCluster(env, stage string, cluster *Cluster) {
-	if p.Environments[env].Stages[stage].Clusters == nil {
-		p.Environments[env].Stages[stage].Clusters = map[string]*Cluster{}
+	if p.GetStage(env, stage).Clusters == nil {
+		p.GetStage(env, stage).Clusters = map[string]*Cluster{}
 	}
-	p.Environments[env].Stages[stage].Clusters[cluster.Name] = cluster
+	p.GetStage(env, stage).Clusters[cluster.Name] = cluster
 }
 
 func (p *ProjectConfig) DeleteCluster(env, stage, cluster string) {
-	delete(p.Environments[env].Stages[stage].Clusters, cluster)
+	delete(p.GetStage(env, stage).Clusters, cluster)
 }
 
 // EnvStageProperty merges the properties of the environment and stage and returns them as a map
 func (pc *ProjectConfig) EnvStageProperty(environment, stage string) map[string]string {
-	return utils.MergeMaps(pc.Environments[environment].Properties, pc.Environments[environment].Stages[stage].Properties)
+	return utils.MergeMaps(pc.GetEnvironment(environment).Properties, pc.GetStage(environment, stage).Properties)
 }
 
 // AddonGroups returns a list of addon groups that have been defined in the addons
@@ -57,4 +53,24 @@ func (p ProjectConfig) AddonGroups() []string {
 		groups[a.Group] = true
 	}
 	return utils.MapKeysToList(groups)
+}
+
+// HasEnvironment checks if an environment exists in the project
+func (p ProjectConfig) HasEnvironment(name string) bool {
+	_, ok := p.Environments[name]
+	return ok
+}
+
+func (p *ProjectConfig) GetEnvironment(name string) *Environment {
+	p.Environments[name].Name = name
+	return p.Environments[name]
+}
+
+func (p *ProjectConfig) GetStage(env, stage string) *Stage {
+	p.GetEnvironment(env).GetStage(stage).Name = stage
+	return p.GetEnvironment(env).GetStage(stage)
+}
+
+func (p *ProjectConfig) GetCluster(env, stage, cluster string) *Cluster {
+	return p.GetStage(env, stage).GetCluster(cluster)
 }

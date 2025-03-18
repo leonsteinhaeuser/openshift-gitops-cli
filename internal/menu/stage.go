@@ -23,7 +23,7 @@ func (s *stageMenu) menuCreateStage(env string) (*project.Stage, error) {
 		if str == "" {
 			return fmt.Errorf("stage name cannot be empty")
 		}
-		if _, ok := s.config.Environments[env].Stages[str]; ok {
+		if s.config.GetEnvironment(env).HasStage(str) {
 			return fmt.Errorf("stage already exists")
 		}
 		return nil
@@ -37,25 +37,64 @@ func (s *stageMenu) menuCreateStage(env string) (*project.Stage, error) {
 		Properties: map[string]string{},
 		Actions:    project.Actions{},
 		Clusters:   map[string]*project.Cluster{},
+		Addons:     map[string]*project.ClusterAddon{},
 	}
 
-	properties, err := s.menuProperties(stage)
+	err = s.menuSettings(stage)
 	if err != nil {
 		return nil, err
 	}
-	stage.Properties = properties
 
 	return stage, nil
 }
 
 func (s *stageMenu) menuUpdateStage(envName, stageName string) (*project.Stage, error) {
-	stage := s.config.Environments[envName].Stages[stageName]
-	properties, err := s.menuProperties(stage)
+	stage := s.config.GetStage(envName, stageName)
+	if stage.Addons == nil {
+		stage.Addons = map[string]*project.ClusterAddon{}
+	}
+	err := s.menuSettings(stage)
 	if err != nil {
 		return nil, err
 	}
-	stage.Properties = properties
 	return stage, nil
+}
+
+// menuSettings creates a context menu to manage the settings of a cluster
+func (s *stageMenu) menuSettings(stage *project.Stage) error {
+	for {
+		prompt := promptui.Select{
+			Label: "Settings",
+			Items: []string{"Addons", "Properties", "Done"},
+		}
+		_, result, err := prompt.Run()
+		if err != nil {
+			return err
+		}
+
+		switch result {
+		case "Addons":
+			addon := addonClusterMenu{
+				writer: s.writer,
+				reader: s.reader,
+				config: s.config,
+			}
+			err := addon.menuManageAddons(stage, true)
+			if err != nil {
+				return err
+			}
+		case "Properties":
+			properties, err := s.menuProperties(stage)
+			if err != nil {
+				return err
+			}
+			stage.Properties = properties
+		case "Done":
+			return nil
+		default:
+			return fmt.Errorf("invalid option %s", result)
+		}
+	}
 }
 
 func (s *stageMenu) menuDeleteStage(env, stage string) error {

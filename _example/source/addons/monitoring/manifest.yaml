@@ -1,0 +1,12 @@
+name: cluster-policies
+group: cluster-policies
+annotations:
+  argocd.argoproj.io/sync-wave: "0"
+properties:
+  ingress_host:
+    required: false
+    default: false
+    type: string
+    description: "The host to expose grafana on"
+files:
+  - ./

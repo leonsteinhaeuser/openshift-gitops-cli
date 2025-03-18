@@ -117,7 +117,7 @@ func main() {
 				}
 
 				if event.Environment != "" && event.Stage == "" && event.Cluster == "" {
-					env := projectConfig.Environments[event.Environment]
+					env := projectConfig.GetEnvironment(event.Environment)
 					err := executeHook(os.Stdout, os.Stderr, event.Type, event.Runtime, env.Actions)
 					if err != nil {
 						fmt.Println(err)
@@ -126,7 +126,7 @@ func main() {
 				}
 
 				if event.Environment != "" && event.Stage != "" && event.Cluster == "" {
-					stage := projectConfig.Environments[event.Environment].Stages[event.Stage]
+					stage := projectConfig.GetStage(event.Environment, event.Stage)
 					err := executeHook(os.Stdout, os.Stderr, event.Type, event.Runtime, stage.Actions)
 					if err != nil {
 						fmt.Println(err)
@@ -135,7 +135,7 @@ func main() {
 				}
 
 				if event.Environment != "" && event.Stage != "" && event.Cluster != "" {
-					cluster := projectConfig.Cluster(event.Environment, event.Stage, event.Cluster)
+					cluster := projectConfig.GetCluster(event.Environment, event.Stage, event.Cluster)
 					if event.Type == menu.EventTypeCreate || event.Type == menu.EventTypeUpdate {
 						err := cluster.Render(projectConfig, event.Environment, event.Stage)
 						if err != nil {
