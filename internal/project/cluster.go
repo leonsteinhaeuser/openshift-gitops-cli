@@ -65,16 +65,13 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 		return fmt.Errorf("failed to load base templates: %w", err)
 	}
 
-	envConfig := config.GetEnvironment(env)
-	stageConfig := envConfig.GetStage(stage)
+	addonProperties := c.AddonProperties(config, env, stage)
 	addons := map[string]template.AddonData{}
-	for k, v := range c.Addons {
-		if !v.Enabled {
-			continue
-		}
+	for k, v := range addonProperties {
 		addons[k] = template.AddonData{
+			Enabled:     v.Enabled,
 			Annotations: config.ParsedAddons[k].Annotations,
-			Properties:  utils.MergeMaps(envConfig.GetAddon(k).Properties, stageConfig.GetAddon(k).Properties, v.Properties),
+			Properties:  v.Properties,
 		}
 	}
 
@@ -136,4 +133,21 @@ func (c *Cluster) SetDefaultAddons(config *ProjectConfig) {
 		}
 		c.Addons[addonName] = cAddon
 	}
+}
+
+// AddonProperties returns the addon properties for the cluster merged with the environment and stage properties
+func (c *Cluster) AddonProperties(config *ProjectConfig, env, stage string) map[string]*ClusterAddon {
+	properties := c.Addons
+	for addonName, addon := range c.Addons {
+		if !addon.Enabled {
+			// addon was disabled on the cluster level, we skip it
+			continue
+		}
+		addonProps := map[string]any{}
+		for key, property := range config.ParsedAddons[addonName].Properties {
+			addonProps[key] = property.Default
+		}
+		properties[addonName].Properties = utils.MergeMaps(addonProps, config.GetStage(env, stage).GetAddon(addonName).Properties, config.GetEnvironment(env).GetAddon(addonName).Properties, c.GetAddon(addonName).Properties)
+	}
+	return properties
 }

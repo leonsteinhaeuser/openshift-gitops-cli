@@ -67,7 +67,7 @@ func (c *clusterMenu) menuSettings(env, stage string, cluster *project.Cluster) 
 				config: c.config,
 			}
 
-			err := addon.menuManageAddons(cluster)
+			err := addon.menuManageAddons(cluster, true)
 			if err != nil {
 				return err
 			}

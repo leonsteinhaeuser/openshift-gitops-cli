@@ -19,14 +19,14 @@ type AddonHandler interface {
 
 type ClusterAddons map[string]*ClusterAddon
 
-func (ca ClusterAddons) AllRequiredPropertiesSet(config *ProjectConfig) error {
+func (ca ClusterAddons) AllRequiredPropertiesSet(config *ProjectConfig, skipOnFailure bool) error {
 	for addonName, addon := range ca {
 		if !addon.Enabled {
 			fmt.Printf("addon %s is disabled\n", addonName)
 			continue
 		}
 		err := addon.AllRequiredPropertiesSet(config, addonName)
-		if err != nil {
+		if err != nil && !skipOnFailure {
 			return fmt.Errorf("failed to validate addon %s: %w", addonName, err)
 		}
 	}

@@ -78,7 +78,7 @@ func (e *environmentMenu) menuSettings(environment *project.Environment) error {
 				reader: e.reader,
 				config: e.config,
 			}
-			err := addon.menuManageAddons(environment)
+			err := addon.menuManageAddons(environment, true)
 			if err != nil {
 				return err
 			}

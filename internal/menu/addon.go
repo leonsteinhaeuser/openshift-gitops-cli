@@ -17,7 +17,7 @@ type addonClusterMenu struct {
 	config *project.ProjectConfig
 }
 
-func (a *addonClusterMenu) menuManageAddons(ah project.AddonHandler) error {
+func (a *addonClusterMenu) menuManageAddons(ah project.AddonHandler, skipAddonValidation bool) error {
 	for {
 		prompt := promptui.Select{
 			Label:     "Manage Addons",
@@ -30,7 +30,7 @@ func (a *addonClusterMenu) menuManageAddons(ah project.AddonHandler) error {
 			return err
 		}
 		if result == "Done" {
-			err := ah.GetAddons().AllRequiredPropertiesSet(a.config)
+			err := ah.GetAddons().AllRequiredPropertiesSet(a.config, skipAddonValidation)
 			if err != nil {
 				fmt.Println("Not all required properties are set", err)
 				continue

@@ -30,6 +30,7 @@ type TemplateData struct {
 }
 
 type AddonData struct {
+	Enabled     bool
 	Annotations map[string]string
 	Properties  map[string]any
 }

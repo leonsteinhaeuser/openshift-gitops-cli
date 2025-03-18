@@ -79,7 +79,7 @@ func (s *stageMenu) menuSettings(stage *project.Stage) error {
 				reader: s.reader,
 				config: s.config,
 			}
-			err := addon.menuManageAddons(stage)
+			err := addon.menuManageAddons(stage, true)
 			if err != nil {
 				return err
 			}
