@@ -806,3 +806,221 @@ func TestCluster_SetDefaultAddons(t *testing.T) {
 		})
 	}
 }
+
+func TestCluster_AddonProperties(t *testing.T) {
+	type fields struct {
+		Name       string
+		Addons     map[string]*ClusterAddon
+		Properties map[string]string
+	}
+	type args struct {
+		config *ProjectConfig
+		env    string
+		stg    string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   map[string]*ClusterAddon
+	}{
+		{
+			name: "one addon, cluster has highest priority",
+			fields: fields{
+				Name: "cluster1",
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+						Properties: map[string]any{
+							"property1": "value1",
+						},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     "Hello World",
+									Type:        template.PropertyTypeString,
+									Description: "property1",
+								},
+							},
+						},
+					},
+					Environments: map[string]*Environment{
+						"env1": {
+							Stages: map[string]*Stage{
+								"stage1": {
+									Addons: map[string]*ClusterAddon{
+										"addon1": {
+											Enabled:    true,
+											Properties: map[string]any{},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				env: "env1",
+				stg: "stage1",
+			},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": "value1"},
+				},
+			},
+		},
+		{
+			name: "one addon, stage has highest priority",
+			fields: fields{
+				Name: "cluster1",
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled:    true,
+						Properties: map[string]any{},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     "Hello World",
+									Type:        template.PropertyTypeString,
+									Description: "property1",
+								},
+							},
+						},
+					},
+					Environments: map[string]*Environment{
+						"env1": {
+							Addons: map[string]*ClusterAddon{
+								"addon1": {
+									Enabled: true,
+									Properties: map[string]any{
+										"property1": "value1",
+									},
+								},
+							},
+							Stages: map[string]*Stage{
+								"stage1": {
+									Addons: map[string]*ClusterAddon{
+										"addon1": {
+											Enabled: true,
+											Properties: map[string]any{
+												"property1": "value1",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				env: "env1",
+				stg: "stage1",
+			},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": "value1"},
+				},
+			},
+		},
+		{
+			name: "one addon, env has highest priority",
+			fields: fields{
+				Name: "cluster1",
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled:    true,
+						Properties: map[string]any{},
+					},
+				},
+			},
+			args: args{
+				config: &ProjectConfig{
+					Addons: map[string]Addon{
+						"addon1": {
+							Group:          "group1",
+							DefaultEnabled: true,
+						},
+					},
+					ParsedAddons: map[string]template.TemplateManifest{
+						"addon1": {
+							Properties: map[string]template.Property{
+								"property1": {
+									Required:    true,
+									Default:     "Hello World",
+									Type:        template.PropertyTypeString,
+									Description: "property1",
+								},
+							},
+						},
+					},
+					Environments: map[string]*Environment{
+						"env1": {
+							Addons: map[string]*ClusterAddon{
+								"addon1": {
+									Enabled: true,
+									Properties: map[string]any{
+										"property1": "value1",
+									},
+								},
+							},
+							Stages: map[string]*Stage{
+								"stage1": {
+									Addons: map[string]*ClusterAddon{},
+								},
+							},
+						},
+					},
+				},
+				env: "env1",
+				stg: "stage1",
+			},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled:    true,
+					Properties: map[string]any{"property1": "value1"},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Cluster{
+				Name:       tt.fields.Name,
+				Addons:     tt.fields.Addons,
+				Properties: tt.fields.Properties,
+			}
+			got := c.AddonProperties(tt.args.config, tt.args.env, tt.args.stg)
+			diff := cmp.Diff(tt.want, got)
+			if diff != "" {
+				t.Errorf("Cluster.AddonProperties() mismatch (-want +got):\n%s", diff)
+				return
+			}
+		})
+	}
+}

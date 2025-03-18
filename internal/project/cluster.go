@@ -136,18 +136,26 @@ func (c *Cluster) SetDefaultAddons(config *ProjectConfig) {
 }
 
 // AddonProperties returns the addon properties for the cluster merged with the environment and stage properties
-func (c *Cluster) AddonProperties(config *ProjectConfig, env, stage string) map[string]*ClusterAddon {
+func (c *Cluster) AddonProperties(config *ProjectConfig, env, stg string) map[string]*ClusterAddon {
 	properties := c.Addons
 	for addonName, addon := range c.Addons {
 		if !addon.Enabled {
 			// addon was disabled on the cluster level, we skip it
 			continue
 		}
+		envAddonProps := map[string]any{}
+		if env := config.GetEnvironment(env).GetAddon(addonName); env != nil {
+			envAddonProps = env.Properties
+		}
+		stageAddonProps := map[string]any{}
+		if stg := config.GetStage(env, stg).GetAddon(addonName); stg != nil {
+			stageAddonProps = stg.Properties
+		}
 		addonProps := map[string]any{}
 		for key, property := range config.ParsedAddons[addonName].Properties {
 			addonProps[key] = property.Default
 		}
-		properties[addonName].Properties = utils.MergeMaps(addonProps, config.GetStage(env, stage).GetAddon(addonName).Properties, config.GetEnvironment(env).GetAddon(addonName).Properties, c.GetAddon(addonName).Properties)
+		properties[addonName].Properties = utils.MergeMaps(addonProps, envAddonProps, stageAddonProps, c.GetAddon(addonName).Properties)
 	}
 	return properties
 }
