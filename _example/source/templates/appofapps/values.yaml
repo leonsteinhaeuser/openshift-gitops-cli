@@ -1,6 +1,6 @@
 ---
 appSuffix: "{{ .ClusterName }}-{{ .Stage }}"
-appSourceBasePath: overlays/{{ .Environment }}/{{ .Stage }}/{{ .ClusterName }}/cluster-configs
+appSourceBasePath: {{ .ClusterPath }}
 
 default:
   app:
@@ -40,7 +40,7 @@ applications:
     annotations:
     {{- $value.Annotations | toYaml | nindent 6 }}
     source:
-      path: {{ $key }}
+      path: {{ joinPath $value.Group $key }}
     labels:
       app.kubernetes.io/managed-by: argocd
   {{- end }}
