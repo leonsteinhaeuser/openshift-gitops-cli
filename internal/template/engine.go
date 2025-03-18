@@ -22,6 +22,8 @@ type TemplateCarrier struct {
 }
 
 type TemplateData struct {
+	BasePath    string
+	ClusterPath string
 	Environment string
 	Stage       string
 	ClusterName string
