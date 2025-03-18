@@ -1,6 +1,7 @@
 package project
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -368,6 +369,271 @@ func TestStage_DisableAddon(t *testing.T) {
 			if diff != "" {
 				t.Errorf("Stage.DisableAddon() mismatch (-want +got):\n%s", diff)
 				return
+			}
+		})
+	}
+}
+
+func TestStage_GetAddons(t *testing.T) {
+	type fields struct {
+		Name       string
+		Properties map[string]string
+		Actions    Actions
+		Clusters   map[string]*Cluster
+		Addons     map[string]*ClusterAddon
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   ClusterAddons
+	}{
+		{
+			name: "no addons",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			want: map[string]*ClusterAddon{},
+		},
+		{
+			name: "one addon",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+					},
+				},
+			},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled: true,
+				},
+			},
+		},
+		{
+			name: "two addons",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+					},
+					"addon2": {
+						Enabled: false,
+					},
+				},
+			},
+			want: map[string]*ClusterAddon{
+				"addon1": {
+					Enabled: true,
+				},
+				"addon2": {
+					Enabled: false,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Stage{
+				Name:       tt.fields.Name,
+				Properties: tt.fields.Properties,
+				Actions:    tt.fields.Actions,
+				Clusters:   tt.fields.Clusters,
+				Addons:     tt.fields.Addons,
+			}
+			if got := s.GetAddons(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Stage.GetAddons() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStage_GetAddon(t *testing.T) {
+	type fields struct {
+		Name       string
+		Properties map[string]string
+		Actions    Actions
+		Clusters   map[string]*Cluster
+		Addons     map[string]*ClusterAddon
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *ClusterAddon
+	}{
+		{
+			name: "no addons",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{},
+			},
+			args: args{
+				name: "addon1",
+			},
+			want: nil,
+		},
+		{
+			name: "one addon",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+					},
+				},
+			},
+			args: args{
+				name: "addon1",
+			},
+			want: &ClusterAddon{
+				Enabled: true,
+			},
+		},
+		{
+			name: "two addons",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+					},
+					"addon2": {
+						Enabled: false,
+					},
+				},
+			},
+			args: args{
+				name: "addon1",
+			},
+			want: &ClusterAddon{
+				Enabled: true,
+			},
+		},
+		{
+			name: "two addons no found",
+			fields: fields{
+				Addons: map[string]*ClusterAddon{
+					"addon1": {
+						Enabled: true,
+					},
+					"addon2": {
+						Enabled: false,
+					},
+				},
+			},
+			args: args{
+				name: "addon5",
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Stage{
+				Name:       tt.fields.Name,
+				Properties: tt.fields.Properties,
+				Actions:    tt.fields.Actions,
+				Clusters:   tt.fields.Clusters,
+				Addons:     tt.fields.Addons,
+			}
+			if got := s.GetAddon(tt.args.name); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Stage.GetAddon() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestStage_GetCluster(t *testing.T) {
+	type fields struct {
+		Name       string
+		Properties map[string]string
+		Actions    Actions
+		Clusters   map[string]*Cluster
+		Addons     map[string]*ClusterAddon
+	}
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *Cluster
+	}{
+		{
+			name: "no clusters",
+			fields: fields{
+				Clusters: map[string]*Cluster{},
+			},
+			args: args{
+				name: "cluster1",
+			},
+			want: nil,
+		},
+		{
+			name: "one cluster",
+			fields: fields{
+				Clusters: map[string]*Cluster{
+					"cluster1": {
+						Name: "cluster1",
+					},
+				},
+			},
+			args: args{
+				name: "cluster1",
+			},
+			want: &Cluster{
+				Name: "cluster1",
+			},
+		},
+		{
+			name: "two clusters",
+			fields: fields{
+				Clusters: map[string]*Cluster{
+					"cluster1": {
+						Name: "cluster1",
+					},
+					"cluster2": {
+						Name: "cluster2",
+					},
+				},
+			},
+			args: args{
+				name: "cluster1",
+			},
+			want: &Cluster{
+				Name: "cluster1",
+			},
+		},
+		{
+			name: "two clusters no found",
+			fields: fields{
+				Clusters: map[string]*Cluster{
+					"cluster1": {
+						Name: "cluster1",
+					},
+					"cluster2": {
+						Name: "cluster2",
+					},
+				},
+			},
+			args: args{
+				name: "cluster5",
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &Stage{
+				Name:       tt.fields.Name,
+				Properties: tt.fields.Properties,
+				Actions:    tt.fields.Actions,
+				Clusters:   tt.fields.Clusters,
+				Addons:     tt.fields.Addons,
+			}
+			if got := s.GetCluster(tt.args.name); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Stage.GetCluster() = %v, want %v", got, tt.want)
 			}
 		})
 	}
