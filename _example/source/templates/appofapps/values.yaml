@@ -1,6 +1,6 @@
 ---
 appSuffix: "{{ .ClusterName }}-{{ .Stage }}"
-appSourceBasePath: overlays/{{ .Environment }}/{{ .Stage }}/{{ .ClusterName }}/cluster-config
+appSourceBasePath: overlays/{{ .Environment }}/{{ .Stage }}/{{ .ClusterName }}/cluster-configs
 
 default:
   app:
@@ -36,6 +36,7 @@ projects:
 applications:
   {{- range $key, $value := .Addons }}
   {{ $key }}:
+    enabled: {{ $value.Enabled }}
     annotations:
     {{- $value.Annotations | toYaml | nindent 6 }}
     source:

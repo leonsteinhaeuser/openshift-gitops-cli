@@ -1,6 +1,6 @@
 ---
 appSuffix: "hugi-dev"
-appSourceBasePath: overlays/dev/dev/hugi/cluster-config
+appSourceBasePath: overlays/dev/dev/hugi/cluster-configs
 
 default:
   app:
@@ -14,8 +14,8 @@ default:
       namespace: openshift-gitops
       server: https://kubernetes.default.svc
     source:
-      repoURL: https://git.external.url/repo/name.git
-      targetRevision: develop
+      repoURL: https://github.com/leonsteinhaeuser/openshift-gitops-cli.git
+      targetRevision: <no value>
 
 projects:
   hub:
@@ -24,7 +24,7 @@ projects:
     description: Project for cluster hub
     namespace: openshift-gitops
     sourceRepos:
-      - https://git.external.url/repo/name.git
+      - https://github.com/leonsteinhaeuser/openshift-gitops-cli.git
     destinations: |
       - namespace: '*'
         server: https://kubernetes.default.svc
@@ -34,24 +34,34 @@ projects:
         kind: '*'
 
 applications:
-  kyverno:
+  cluster-policies:
+    enabled: true
     annotations:
-      {}
+      argocd.argoproj.io/sync-wave: "0"
+    source:
+      path: cluster-policies
+    labels:
+      app.kubernetes.io/managed-by: argocd
+  disco-operator:
+    enabled: true
+    annotations:
+      argocd.argoproj.io/sync-wave: "0"
+    source:
+      path: disco-operator
+    labels:
+      app.kubernetes.io/managed-by: argocd
+  kyverno:
+    enabled: true
+    annotations:
+      argocd.argoproj.io/sync-wave: "0"
     source:
       path: kyverno
     labels:
       app.kubernetes.io/managed-by: argocd
   monitoring:
+    enabled: true
     annotations:
-      {}
-    source:
-      path: monitoring
-    labels:
-      app.kubernetes.io/managed-by: argocd
--by: argocd
-  monitoring:
-    annotations:
-      {}
+      argocd.argoproj.io/sync-wave: "0"
     source:
       path: monitoring
     labels:

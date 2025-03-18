@@ -53,8 +53,15 @@ environments:
           hugi:
             addons:
               cluster-policies:
-                enabled: false
-                properties: {}
+                enabled: true
+                properties:
+                  enableNetworkPolicies: true
+              disco-operator:
+                enabled: true
+                properties:
+                  isSuperCool: false
+                  requiredDefaultNotSet: null
+                  second: Hello World
               kyverno:
                 enabled: true
                 properties: {}
