@@ -22,6 +22,8 @@ type TemplateCarrier struct {
 }
 
 type TemplateData struct {
+	BasePath    string
+	ClusterPath string
 	Environment string
 	Stage       string
 	ClusterName string
@@ -31,6 +33,7 @@ type TemplateData struct {
 
 type AddonData struct {
 	Enabled     bool
+	Group       string
 	Annotations map[string]string
 	Properties  map[string]any
 }

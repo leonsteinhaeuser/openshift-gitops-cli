@@ -1,6 +1,6 @@
 ---
 appSuffix: "hugi-dev"
-appSourceBasePath: overlays/dev/dev/hugi/cluster-configs
+appSourceBasePath: _example/overlays/dev/dev/hugi
 
 default:
   app:
@@ -39,7 +39,7 @@ applications:
     annotations:
       argocd.argoproj.io/sync-wave: "0"
     source:
-      path: cluster-policies
+      path: cluster-configs/policies/cluster-policies
     labels:
       app.kubernetes.io/managed-by: argocd
   disco-operator:
@@ -47,7 +47,7 @@ applications:
     annotations:
       argocd.argoproj.io/sync-wave: "0"
     source:
-      path: disco-operator
+      path: cluster-configs/policies/disco-operator
     labels:
       app.kubernetes.io/managed-by: argocd
   kyverno:
@@ -55,7 +55,7 @@ applications:
     annotations:
       argocd.argoproj.io/sync-wave: "0"
     source:
-      path: kyverno
+      path: cluster-configs/kyverno
     labels:
       app.kubernetes.io/managed-by: argocd
   monitoring:
@@ -63,6 +63,6 @@ applications:
     annotations:
       argocd.argoproj.io/sync-wave: "0"
     source:
-      path: monitoring
+      path: cluster-configs/monitoring
     labels:
       app.kubernetes.io/managed-by: argocd

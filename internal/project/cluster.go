@@ -2,6 +2,7 @@ package project
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/template"
 	"github.com/leonsteinhaeuser/openshift-gitops-cli/internal/utils"
@@ -70,6 +71,7 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 	for k, v := range addonProperties {
 		addons[k] = template.AddonData{
 			Enabled:     v.Enabled,
+			Group:       config.ParsedAddons[k].Group,
 			Annotations: config.ParsedAddons[k].Annotations,
 			Properties:  v.Properties,
 		}
@@ -78,6 +80,8 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 	// render templates
 	for _, t := range templates {
 		err = t.Render(config.BasePath, template.TemplateData{
+			BasePath:    config.BasePath,
+			ClusterPath: path.Join(config.BasePath, env, stage, c.Name),
 			Environment: env,
 			Stage:       stage,
 			ClusterName: c.Name,
