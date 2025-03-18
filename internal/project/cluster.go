@@ -70,6 +70,7 @@ func (c *Cluster) Render(config *ProjectConfig, env, stage string) error {
 	for k, v := range addonProperties {
 		addons[k] = template.AddonData{
 			Enabled:     v.Enabled,
+			Group:       config.ParsedAddons[k].Group,
 			Annotations: config.ParsedAddons[k].Annotations,
 			Properties:  v.Properties,
 		}

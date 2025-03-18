@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"path"
 	"strings"
 	"text/template"
 
@@ -18,6 +19,7 @@ func funcMap(tmpl *template.Template) template.FuncMap {
 	templateFuncMap["gzip"] = gzipCompress
 	templateFuncMap["gunzip"] = gzipDecompress
 	templateFuncMap["include"] = includeFun(tmpl, map[string]int{})
+	templateFuncMap["joinPath"] = path.Join
 	return templateFuncMap
 }
 
