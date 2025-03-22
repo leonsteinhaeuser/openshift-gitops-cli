@@ -72,5 +72,9 @@ func (p *ProjectConfig) GetStage(env, stage string) *Stage {
 }
 
 func (p *ProjectConfig) GetCluster(env, stage, cluster string) *Cluster {
-	return p.GetStage(env, stage).GetCluster(cluster)
+	cls := p.GetStage(env, stage).GetCluster(cluster)
+	if cls != nil && cls.Name == "" {
+		cls.Name = cluster
+	}
+	return cls
 }
