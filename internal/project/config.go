@@ -1,6 +1,7 @@
 package project
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -9,7 +10,24 @@ import (
 )
 
 // ParseConfig reads a yaml file from the given path and unmarshals it into a ProjectConfig struct
+// If the config file does not exist, it will be created with default values
 func ParseConfig(path string) (*ProjectConfig, error) {
+	_, err := os.Stat(path)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return nil, fmt.Errorf("failed to check for the PROJECT.yaml file: %w", err)
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		f, err := os.Create(path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+		_, err = f.WriteString("basePath: overlays/\ntemplateBasePath: templates/\n")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	bts, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
