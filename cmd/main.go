@@ -51,32 +51,6 @@ func init() {
 		return
 	}
 	projectConfig = pc
-
-	if projectConfig.Environments == nil {
-		projectConfig.Environments = map[string]*project.Environment{}
-	}
-
-	if projectConfig.Addons == nil {
-		projectConfig.Addons = map[string]project.Addon{}
-	}
-
-	if projectConfig.ParsedAddons == nil {
-		projectConfig.ParsedAddons = map[string]template.TemplateManifest{}
-	}
-
-	// load all addons, so we can use them later
-	for k, v := range projectConfig.Addons {
-		tm, err := template.LoadManifest(v.Path)
-		if err != nil {
-			fmt.Printf("An error occurred while loading the addon [%s] manifest file: %s, %v\n", k, v.Path, err)
-			os.Exit(1)
-			return
-		}
-		tm.Name = k
-		tm.BasePath = v.Path
-		tm.Group = v.Group
-		projectConfig.ParsedAddons[k] = *tm
-	}
 }
 
 func main() {
