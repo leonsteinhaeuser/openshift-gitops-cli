@@ -108,7 +108,7 @@ func TestProjectConfig_GetCluster(t *testing.T) {
 		want   *Cluster
 	}{
 		{
-			name: "should return true if the cluster exists",
+			name: "should return cluster if the cluster exists",
 			fields: fields{
 				Environments: map[string]*Environment{
 					"env1": {
@@ -140,7 +140,7 @@ func TestProjectConfig_GetCluster(t *testing.T) {
 			},
 		},
 		{
-			name: "should return false if the cluster does not exist",
+			name: "should not return cluster if the cluster does not exist",
 			fields: fields{
 				Environments: map[string]*Environment{
 					"env1": {
@@ -160,6 +160,30 @@ func TestProjectConfig_GetCluster(t *testing.T) {
 				cluster: "cluster2",
 			},
 			want: nil,
+		},
+		{
+			name: "name not defined in name key",
+			fields: fields{
+				Environments: map[string]*Environment{
+					"env1": {
+						Stages: map[string]*Stage{
+							"stage1": {
+								Clusters: map[string]*Cluster{
+									"cluster1": {},
+								},
+							},
+						},
+					},
+				},
+			},
+			args: args{
+				env:     "env1",
+				stage:   "stage1",
+				cluster: "cluster1",
+			},
+			want: &Cluster{
+				Name: "cluster1",
+			},
 		},
 	}
 	for _, tt := range tests {
